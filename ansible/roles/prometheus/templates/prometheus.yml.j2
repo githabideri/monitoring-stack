@@ -1,8 +1,9 @@
 ---
 # Prometheus main config.
 #
-# Retention is expressed in the config file (the CLI flags are deprecated).
-# Time and size limits can be combined; whichever limit is hit first wins.
+# Prometheus 3.x: the TSDB *path* is a CLI flag (--storage.tsdb.path, set in
+# the service unit); retention stays in the config file. Time and size
+# limits can be combined; whichever limit is hit first wins.
 # Keep the size limit at ~80-85% of the underlying dataset/quota so
 # compaction has headroom — see docs/retention.md.
 global:
@@ -17,7 +18,6 @@ global:
 
 storage:
   tsdb:
-    path: {{ prometheus_data_dir }}
     retention:
       time: {{ prometheus_retention_time | default('90d') }}
       size: {{ prometheus_retention_size | default('16GB') }}

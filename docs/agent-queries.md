@@ -106,11 +106,14 @@ up{job="llm-hub"}
 ## Prometheus self
 
 ```promql
-# Storage size / series count (the "is 20 GiB sane?" answers)
-prometheus_tsdb_storage_size_bytes
-prometheus_tsdb_wal_segment_files
-count({__name__=~"."})                          # active series
-rate(prometheus_tsdb_samples_appended_total[1h])  # ingest rate
+# Total TSDB storage (Prometheus 3.x — the old prometheus_tsdb_storage_size_bytes
+# no longer exists; sum the three parts):
+prometheus_tsdb_storage_blocks_bytes
+  + prometheus_tsdb_wal_storage_size_bytes
+  + prometheus_tsdb_head_chunks_storage_size_bytes
+prometheus_tsdb_head_series                 # active series
+rate(prometheus_tsdb_head_samples_appended_total[1h])  # ingest rate
+prometheus_tsdb_retention_limit_bytes       # the size cap (16 GiB)
 
 # Scrape health
 up

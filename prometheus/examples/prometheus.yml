@@ -16,10 +16,11 @@ global:
 
 storage:
   tsdb:
-    path: /var/lib/prometheus      # dedicated ZFS-backed dataset
     retention:
       time: 90d
       size: 16GB                   # ~80-85% of the dataset quota
+    # NOTE (Prometheus 3.x): the path is NOT a config field — it is set in
+    # the service unit as --storage.tsdb.path=/var/lib/prometheus
 
 rule_files:
   - /etc/prometheus/rules.d/*.yml

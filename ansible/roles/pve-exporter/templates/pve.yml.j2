@@ -15,5 +15,5 @@ default:
 {% endif %}{% if entry.token_name is defined %}  token_name: {{ entry.token_name }}
 {% endif %}{% if entry.token_value is defined %}  token_value: "{{ entry.token_value }}"
 {% endif %}{% if entry.verify_ssl is defined %}  verify_ssl: {{ entry.verify_ssl }}
-{% endif %}{% endfor %}
+{% endif %}{% endif %}
 {% endfor %}

@@ -25,9 +25,11 @@ After ~7 days of running, answer "is 20 GiB sane?" from the system's
 own metrics (see [agent-queries.md](agent-queries.md), Prometheus self):
 
 ```promql
-prometheus_tsdb_storage_size_bytes
-count({__name__=~"."})
-rate(prometheus_tsdb_samples_appended_total[1h])
+prometheus_tsdb_storage_blocks_bytes
+  + prometheus_tsdb_wal_storage_size_bytes
+  + prometheus_tsdb_head_chunks_storage_size_bytes
+prometheus_tsdb_head_series
+rate(prometheus_tsdb_head_samples_appended_total[1h])
 ```
 
 Projected size ≈ current size ÷ days running × 90, with compaction

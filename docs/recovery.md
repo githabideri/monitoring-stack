@@ -22,7 +22,8 @@ What is what:
    ```
 3. Restart the Prometheus service; it opens the copied blocks.
    Expect a compaction burst on first start.
-4. Verify: `prometheus_tsdb_storage_size_bytes`, `/api/v1/status/config`,
+4. Verify: `prometheus_tsdb_storage_blocks_bytes` (3.x — see
+   [retention.md](retention.md) for the full sum), `/api/v1/status/config`,
    and a sample recording-rule query.
 
 The gap in history = time since the last successful nightly copy.

@@ -1,4 +1,12 @@
 # Minimal grafana.ini — everything else stays at built-in defaults.
+[paths]
+# Grafana writes into its working dir by default; in the LXC that is the
+# (read-only-ish) install dir, so pin all state under grafana_home.
+data = {{ grafana_home }}/data
+logs = {{ grafana_home }}/logs
+plugins = {{ grafana_home }}/plugins
+provisioning = {{ grafana_config_dir }}/provisioning
+
 [server]
 protocol = http
 http_port = {{ grafana_http_port }}

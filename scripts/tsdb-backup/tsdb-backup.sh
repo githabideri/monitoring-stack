@@ -15,6 +15,7 @@
 #   TSDB_DIR   Host path of the TSDB dataset (required)
 #   DEST       Backup destination dir       (required; must be a mountpoint)
 #   KEEP       Snapshots to keep in DEST    (default 14)
+#   LOCAL_KEEP_DAYS  Age limit for local snapshot cleanup (default 2)
 #
 # Exit codes: 0 ok, 1 config error, 2 snapshot failed, 3 copy failed, 4 prune failed
 
@@ -34,10 +35,11 @@ log() { echo "$(date -Is) $*"; }
 [ -w "$DEST" ] || { log "ERROR: DEST $DEST not writable"; exit 1; }
 
 # 1. Ask Prometheus to snapshot the live TSDB.
-#    Response: {"status":"success","data":{"filename":"2026-09-06T...Z"}}
+#    Prometheus 2.x: {"status":"success","data":{"filename":"..."}}
+#    Prometheus 3.x: {"status":"success","data":{"name":"..."}}  (renamed)
 log "requesting snapshot from $PROM_URL"
 snap_json="$(curl -fsS -X POST "$PROM_URL/api/v1/admin/tsdb/snapshot")" || { log "ERROR: snapshot request failed"; exit 2; }
-fname="$(echo "$snap_json" | grep -oE '"filename":"[^"]+"' | cut -d'"' -f4)"
+fname="$(echo "$snap_json" | grep -oE '"(filename|name)":"[^"]+"' | head -1 | cut -d'"' -f4)"
 [ -n "$fname" ] || { log "ERROR: no filename in response: $snap_json"; exit 2; }
 
 src="$TSDB_DIR/snapshots/$fname"
@@ -52,7 +54,17 @@ if ! mkdir -p "$dst" && rsync -a --info=progress2 "$src/" "$dst/"; then
   exit 3
 fi
 
-# 3. Prune: keep the newest KEEP snapshot dirs in DEST.
+# 3. Prune local snapshots: 3.x has no delete/list API (2.x's DELETE endpoint
+#    is gone), so a successful copy is followed by removing this run's local
+#    copy, and anything older than LOCAL_KEEP_DAYS (default 2) left by failed
+#    runs. A snapshot dir is a static copy of the live TSDB — deleting it
+#    never touches the live data.
+log "pruning local snapshots (keep ${LOCAL_KEEP_DAYS:-2}d)"
+find "$TSDB_DIR/snapshots" -mindepth 1 -maxdepth 1 -type d \
+  -mtime +"${LOCAL_KEEP_DAYS:-2}" -exec rm -rf -- {} + 2>/dev/null || true
+rm -rf -- "$src"
+
+# 4. Prune: keep the newest KEEP snapshot dirs in DEST.
 log "pruning DEST to newest $KEEP"
 (
   cd "$DEST/snapshots"

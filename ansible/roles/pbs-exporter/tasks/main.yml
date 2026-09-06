@@ -42,6 +42,11 @@
     pbs_exporter_download_sha256 | length > 0
     and (pbs_sum.stdout | default(''))[:64] != pbs_exporter_download_sha256
 
+- name: Ensure extract dir
+  ansible.builtin.file:
+    path: /tmp/pbs-extract
+    state: directory
+
 - name: Extract
   ansible.builtin.unarchive:
     src: /tmp/pbs-exporter.tar.gz
@@ -55,6 +60,7 @@
     owner: root
     group: root
     mode: "0755"
+    remote_src: true
   notify: restart pbs_exporter
 
 - name: Deploy env file (token stays out of committed files)

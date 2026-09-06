@@ -4,6 +4,11 @@
     msg: "grafana_admin_password must be set (site playbook / secrets)"
   when: grafana_admin_password | length == 0
 
+- name: Ensure grafana group
+  ansible.builtin.group:
+    name: "{{ grafana_group }}"
+    system: true
+
 - name: Ensure grafana user
   ansible.builtin.user:
     name: "{{ grafana_user }}"
@@ -50,6 +55,11 @@
     grafana_download_sha256 | length > 0
     and (grafana_sum.stdout | default(''))[:64] != grafana_download_sha256
 
+- name: Ensure extract dir
+  ansible.builtin.file:
+    path: /tmp/grafana-extract
+    state: directory
+
 - name: Extract
   ansible.builtin.unarchive:
     src: "/tmp/grafana-{{ grafana_version }}.tar.gz"
@@ -57,9 +67,18 @@
     remote_src: true
 
 - name: Install
+  # NOTE: Grafana >= 10.x tarballs unpack into grafana-v<ver>/ (with the v).
+  # Trailing slashes on BOTH sides: copy the *contents* into the install dir.
   ansible.builtin.command:
-    cmd: rsync -a --delete "/tmp/grafana-extract/grafana-{{ grafana_version }}" "{{ grafana_install_dir }}"
+    cmd: rsync -a --delete "/tmp/grafana-extract/grafana-v{{ grafana_version }}/" "{{ grafana_install_dir }}/"
     creates: "{{ grafana_install_dir }}/bin/grafana-server"
+
+- name: Take ownership of install dir (Grafana writes caches into homepath)
+  ansible.builtin.file:
+    path: "{{ grafana_install_dir }}"
+    owner: "{{ grafana_user }}"
+    group: "{{ grafana_group }}"
+    recurse: yes
 
 - name: Deploy grafana.ini
   ansible.builtin.template:

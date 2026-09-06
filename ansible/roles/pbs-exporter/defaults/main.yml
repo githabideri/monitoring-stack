@@ -16,6 +16,8 @@ pbs_exporter_endpoint: "http://localhost:8007"
 # PBS uses self-signed certs by default
 pbs_exporter_insecure: true
 pbs_exporter_timeout: "10s"
-# API token (REQUIRED — put in site secrets, never in a committed file)
-pbs_exporter_api_token: ""
-pbs_exporter_token_name: "pbs-exporter"
+# The exporter assembles `Authorization: PBSAPIToken=<user>!<token-name>:<secret>`
+# itself, so pass the parts separately (NOT a full token string):
+pbs_exporter_username: ""
+pbs_exporter_api_token: ""   # secret only (the UUID)
+pbs_exporter_token_name: "scraper"

@@ -5,13 +5,17 @@ After=network-online.target
 
 [Service]
 Type=oneshot
+# PROM_URL  = Prometheus base URL (its LXC/VM address, not 127.0.0.1 — the
+#             script runs on the host, Prometheus runs in a container)
 # TSDB_DIR  = host path of the TSDB ZFS dataset
 # DEST      = mounted backup target (e.g. NAS dataset over NFS)
 # KEEP      = snapshots to retain in DEST
-Environment=TSDB_DIR=/var/lib/pve/monitoring-prometheus
-Environment=DEST=/var/monitoring-backup
+# LOCAL_KEEP_DAYS = age limit (days) for local snapshot cleanup
+Environment=PROM_URL=http://PROMETHEUS-ADDR:9090
+Environment=TSDB_DIR=/mnt/pve/rpool/data/monitoring-prometheus
+Environment=DEST=/mnt/monitoring-backup
 Environment=KEEP=14
 ExecStart=/usr/local/bin/tsdb-backup.sh
-# A missed window (NAS down) should retry within the same availability window:
-OnFailure=tsdb-backup-retry.timer
+# A missed window (NAS down) is visible in the journal and the timer's
+# Persistent=true catches up on the next availability window.
 TimeoutStartSec=30min

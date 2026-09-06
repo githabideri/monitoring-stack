@@ -15,7 +15,7 @@ grafana_admin_password: ""
 
 # Datasource
 grafana_prometheus_name: Prometheus
-# Intra-fleet address of the Prometheus LXC, e.g. "http://192.168.0.88:9090"
+# Intra-fleet address of the Prometheus LXC, e.g. "http://PROMETHEUS-ADDR:9090"
 grafana_prometheus_url: "http://localhost:9090"
 
 # Dashboard JSON files to deploy (paths on the control node)

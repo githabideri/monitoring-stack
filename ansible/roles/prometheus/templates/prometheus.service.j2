@@ -9,6 +9,7 @@ Group={{ prometheus_group }}
 Type=simple
 ExecStart={{ prometheus_install_dir }}/prometheus \
   --config.file={{ prometheus_config_dir }}/prometheus.yml \
+  --storage.tsdb.path={{ prometheus_data_dir }} \
 {% if prometheus_enable_admin_api | default(true) %}  --web.enable-admin-api \
 {% endif %}  --web.listen-address={{ prometheus_listen_address }}
 Restart=on-failure

@@ -1,6 +1,6 @@
 ---
 # Versions — bump deliberately, see docs/retention.md & README.
-prometheus_version: "3.5.0"
+prometheus_version: "3.14.0"
 prometheus_arch: amd64
 # Optional sha256 of the release tarball (strongly recommended for unattended use)
 prometheus_download_sha256: ""

@@ -1,0 +1,6 @@
+---
+- name: Reload systemd and restart pbs_exporter
+  ansible.builtin.systemd:
+    name: pbs_exporter
+    daemon_reload: true
+    state: restarted

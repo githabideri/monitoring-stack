@@ -1,0 +1,100 @@
+{
+  "title": "Storage / ZFS",
+  "uid": "homelab-storage-zfs",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": true,
+  "refresh": "1m",
+  "time": { "from": "now-7d", "to": "now" },
+  "tags": ["homelab", "storage"],
+  "templating": {
+    "list": [
+      {
+        "name": "instance",
+        "label": "Host",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
+        "query": "label_values(zfs_arc_size, instance)",
+        "sort": "alpha",
+        "includeAll": true,
+        "multi": true
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "ARC size",
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
+      "targets": [{ "expr": "max by (instance) (zfs_arc_size{instance=~\"$instance\"})", "instant": true, "legendFormat": "{{instance}}" }],
+      "fieldConfig": { "defaults": { "unit": "bytes" } }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "ARC hit ratio",
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
+      "targets": [{ "expr": "max by (instance) (homelab:zfs_arc_hit:ratio{instance=~\"$instance\"})", "instant": true }],
+      "fieldConfig": { "defaults": { "unit": "percentdecimal", "min": 0, "max": 1, "thresholds": { "mode": "absolute", "steps": [ { "color": "red" }, { "color": "yellow", "value": 0.8 }, { "color": "green", "value": 0.9 } ] } } }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "ARC read (GB/s)",
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
+      "targets": [{ "expr": "sum by (instance) (rate(zfs_arc_read_bytes_total{instance=~\"$instance\"}[5m])) / 1e9", "instant": true, "legendFormat": "{{instance}}" }],
+      "fieldConfig": { "defaults": { "unit": "Bps" } }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "ARC misses (rate/s)",
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
+      "targets": [{ "expr": "sum by (instance) (rate(zfs_arc_misses_total{instance=~\"$instance\"}[5m]))", "instant": true, "legendFormat": "{{instance}}" }]
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Filesystem used (%) — 30d growth",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
+      "targets": [{ "expr": "homelab:fs_used:ratio{instance=~\"$instance\"} * 100", "legendFormat": "{{instance}} {{mountpoint}}" }],
+      "fieldConfig": { "defaults": { "unit": "percent" } }
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Disk IO (B/s)",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
+      "targets": [
+        { "expr": "sum by (instance) (rate(node_disk_read_bytes_total{instance=~\"$instance\"}[5m]))", "legendFormat": "read {{instance}}" },
+        { "expr": "sum by (instance) (rate(node_disk_written_bytes_total{instance=~\"$instance\"}[5m]))", "legendFormat": "write {{instance}}" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "Bps" } }
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "ARC efficiency trend",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
+      "targets": [{ "expr": "homelab:zfs_arc_hit:ratio{instance=~\"$instance\"}", "legendFormat": "{{instance}}" }],
+      "fieldConfig": { "defaults": { "unit": "percentdecimal", "min": 0, "max": 1 } }
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "Disk io time utilisation (%)",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
+      "targets": [{ "expr": "100 * rate(node_disk_io_time_seconds_total{instance=~\"$instance\"}[5m])", "legendFormat": "{{instance}} {{device}}" }],
+      "fieldConfig": { "defaults": { "unit": "percent" } }
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+---
+# Versions — bump deliberately, see docs/retention.md & README.
+prometheus_version: "3.5.0"
+prometheus_arch: amd64
+# Optional sha256 of the release tarball (strongly recommended for unattended use)
+prometheus_download_sha256: ""
+
+prometheus_user: prometheus
+prometheus_group: prometheus
+# TSDB location. On a Proxmox LXC this should be a dedicated ZFS-backed
+# mountpoint, NOT the rootfs (see docs/architecture.md, docs/retention.md).
+prometheus_data_dir: /var/lib/prometheus
+prometheus_config_dir: /etc/prometheus
+prometheus_install_dir: /opt/prometheus
+
+prometheus_listen_address: "0.0.0.0:9090"
+# Admin API is required for the TSDB snapshot backup (POST /api/v1/admin/tsdb/snapshot).
+# Keep the web port on a trusted network only; see docs/architecture.md (Security).
+prometheus_enable_admin_api: true
+
+prometheus_scrape_interval: 30s
+prometheus_evaluation_interval: 30s
+# Labels applied to every series, e.g. {site: vienna}. Keep cardinality low.
+prometheus_external_labels: {}
+
+# Scrape jobs: list of dicts
+#   job:            job name (stable, short)
+#   targets:        list of "host:port"
+#   metrics_path:   (default /metrics)
+#   params:         scrape url params, e.g. {node: ["1"]}
+#   labels:         per-job extra labels, e.g. {site: vienna, role: pve-node}
+#   scheme:         (default http)
+#   basic_auth_user / basic_auth_pass: optional
+#   tls_insecure_skip_verify: bool (self-signed endpoints)
+prometheus_scrape_configs: []
+
+# Rule files to copy into <config_dir>/rules.d/ (paths on the control node)
+prometheus_rule_files: []

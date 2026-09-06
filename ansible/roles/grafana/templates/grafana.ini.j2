@@ -1,0 +1,15 @@
+# Minimal grafana.ini — everything else stays at built-in defaults.
+[server]
+protocol = http
+http_port = {{ grafana_http_port }}
+# Bind all interfaces; keep the port on a trusted network and gate access
+# with a reverse proxy + Grafana's own authentication.
+root_url = %(protocol)s://%(domain)s:%(http_port)s/
+
+[users]
+# Admin password comes from grafana.env (GF_SECURITY_ADMIN_PASSWORD),
+# set on first boot; subsequent runs reuse the stored (hashed) password.
+
+[analytics]
+reporting_enabled = false
+check_for_updates = true

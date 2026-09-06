@@ -1,0 +1,17 @@
+[Unit]
+Description=Prometheus TSDB snapshot backup
+# After the network; the destination must be up (e.g. NAS power window).
+After=network-online.target
+
+[Service]
+Type=oneshot
+# TSDB_DIR  = host path of the TSDB ZFS dataset
+# DEST      = mounted backup target (e.g. NAS dataset over NFS)
+# KEEP      = snapshots to retain in DEST
+Environment=TSDB_DIR=/var/lib/pve/monitoring-prometheus
+Environment=DEST=/var/monitoring-backup
+Environment=KEEP=14
+ExecStart=/usr/local/bin/tsdb-backup.sh
+# A missed window (NAS down) should retry within the same availability window:
+OnFailure=tsdb-backup-retry.timer
+TimeoutStartSec=30min

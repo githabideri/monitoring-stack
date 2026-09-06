@@ -1,0 +1,137 @@
+{
+  "title": "Homelab Overview",
+  "uid": "homelab-overview",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": true,
+  "refresh": "1m",
+  "time": { "from": "now-24h", "to": "now" },
+  "tags": ["homelab"],
+  "timezone": "browser",
+  "templating": { "list": [] },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Hosts up",
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
+      "targets": [
+        {
+          "expr": "count(up{job=\"node-exporter\"} == 1)",
+          "legendFormat": "up"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 1 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Targets down",
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
+      "targets": [{ "expr": "count(up == 0)" }],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 1 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 3,
+      "type": "table",
+      "title": "CPU pressure (top 8)",
+      "gridPos": { "h": 6, "w": 8, "x": 8, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
+      "targets": [{ "expr": "topk(8, homelab:cpu_util:avg5m)", "format": "table" }],
+      "transformations": [{ "id": "organize", "options": { "excludeByName": { "Time": true, "__name__": true, "job": true, "instance": false } } }]
+    },
+    {
+      "id": 4,
+      "type": "table",
+      "title": "Memory pressure (top 8, %)",
+      "gridPos": { "h": 6, "w": 8, "x": 16, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
+      "targets": [{ "expr": "topk(8, homelab:mem_used:ratio * 100)", "format": "table" }],
+      "transformations": [{ "id": "organize", "options": { "excludeByName": { "Time": true, "__name__": true, "job": true } } }]
+    },
+    {
+      "id": 5,
+      "type": "table",
+      "title": "Filesystem pressure (top 10, %)",
+      "gridPos": { "h": 7, "w": 8, "x": 24, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
+      "targets": [{ "expr": "topk(10, homelab:fs_used:ratio * 100)", "format": "table" }],
+      "transformations": [{ "id": "organize", "options": { "excludeByName": { "Time": true, "__name__": true, "job": true, "fstype": true } } }]
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "PBS datastore used (%)",
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 6 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
+      "targets": [{ "expr": "homelab:pbs_datastore_used:ratio * 100", "legendFormat": "{{datastore}}" }],
+      "fieldConfig": { "defaults": { "unit": "percent" } }
+    },
+    {
+      "id": 7,
+      "type": "table",
+      "title": "Stale backups (hours since last backup, top 10)",
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 6 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
+      "targets": [{ "expr": "topk(10, homelab:backup_age_seconds / 3600)", "format": "table" }],
+      "transformations": [{ "id": "organize", "options": { "excludeByName": { "Time": true, "__name__": true } } }]
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "GPU utilisation (%)",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 13 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
+      "targets": [{ "expr": "homelab:gpu_utilization", "legendFormat": "{{server}} / {{gpu}}" }],
+      "fieldConfig": { "defaults": { "unit": "percent" } }
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "LLM KV-cache usage",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 13 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
+      "targets": [{ "expr": "homelab:llm_kv_used:ratio", "legendFormat": "{{server}} / {{model}}" }],
+      "fieldConfig": { "defaults": { "unit": "percentdecimal" } }
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "LLM queue (waiting requests)",
+      "gridPos": { "h": 8, "w": 12, "x": 24, "y": 13 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
+      "targets": [{ "expr": "homelab:llm_queue:sum", "legendFormat": "{{server}} / {{model}}" }]
+    },
+    {
+      "id": 11,
+      "type": "timeseries",
+      "title": "ZFS ARC hit ratio",
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 21 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
+      "targets": [{ "expr": "homelab:zfs_arc_hit:ratio", "legendFormat": "{{instance}}" }],
+      "fieldConfig": { "defaults": { "unit": "percentdecimal", "min": 0, "max": 1 } }
+    }
+  ]
+}

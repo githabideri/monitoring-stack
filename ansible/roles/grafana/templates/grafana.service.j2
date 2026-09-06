@@ -1,0 +1,24 @@
+[Unit]
+Description=Grafana
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User={{ grafana_user }}
+Group={{ grafana_group }}
+Type=simple
+EnvironmentFile={{ grafana_config_dir }}/grafana.env
+Environment=HOME={{ grafana_home }}
+ExecStart={{ grafana_install_dir }}/bin/grafana server \
+  --config {{ grafana_config_dir }}/grafana.ini \
+  --config-overrides \
+  --homepath {{ grafana_install_dir }}
+WorkingDirectory={{ grafana_install_dir }}
+Restart=on-failure
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

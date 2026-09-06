@@ -1,0 +1,121 @@
+{
+  "title": "GPU / LLM",
+  "uid": "homelab-gpu-llm",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": true,
+  "refresh": "30s",
+  "time": { "from": "now-24h", "to": "now" },
+  "tags": ["homelab", "llm"],
+  "templating": {
+    "list": [
+      {
+        "name": "server",
+        "label": "Server",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
+        "query": "label_values(hub_gpu_utilization_pct, server)",
+        "sort": "alpha",
+        "includeAll": true,
+        "multi": true
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "GPU utilisation (%)",
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
+      "targets": [{ "expr": "hub_gpu_utilization_pct{server=~\"$server\"}", "legendFormat": "{{server}} / {{gpu}}" }],
+      "fieldConfig": { "defaults": { "unit": "percent" } }
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "GPU VRAM (MiB)",
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
+      "targets": [
+        { "expr": "hub_gpu_memory_used_mib{server=~\"$server\"}", "legendFormat": "used {{server}} / {{gpu}}" },
+        { "expr": "hub_gpu_memory_total_mib{server=~\"$server\"}", "legendFormat": "total {{server}} / {{gpu}}" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "Mbytes" } }
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "GPU temperature / power",
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 7 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
+      "targets": [
+        { "expr": "hub_gpu_temp_c{server=~\"$server\"}", "legendFormat": "temp {{server}} / {{gpu}}", "unit": "celsius" },
+        { "expr": "hub_gpu_power_w{server=~\"$server\"}", "legendFormat": "power {{server}} / {{gpu}}", "unit": "watt" }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Generation throughput (tok/s)",
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 7 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
+      "targets": [{ "expr": "hub_model_tokens_per_second{server=~\"$server\"}", "legendFormat": "{{server}} / {{model}}" }]
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Prompt processing throughput (tok/s)",
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 14 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
+      "targets": [{ "expr": "hub_model_prompt_tokens_per_second{server=~\"$server\"}", "legendFormat": "{{server}} / {{model}}" }]
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "TTFT / TPOT (s, p95)",
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 14 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
+      "targets": [
+        { "expr": "hub_model_ttft_p95_seconds{server=~\"$server\"}", "legendFormat": "ttft {{server}} / {{model}}" },
+        { "expr": "hub_model_tpot_p95_seconds{server=~\"$server\"}", "legendFormat": "tpot {{server}} / {{model}}" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" } }
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Queue & running requests",
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 21 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
+      "targets": [
+        { "expr": "hub_model_requests_waiting{server=~\"$server\"}", "legendFormat": "waiting {{server}} / {{model}}" },
+        { "expr": "hub_model_requests_running{server=~\"$server\"}", "legendFormat": "running {{server}} / {{model}}" }
+      ]
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "KV cache used / preemptions",
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 21 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
+      "targets": [
+        { "expr": "hub_model_kv_cache_used{server=~\"$server\"}", "legendFormat": "kv {{server}} / {{model}}" },
+        { "expr": "increase(hub_model_preemptions_window{server=~\"$server\"}[1h])", "legendFormat": "preempt {{server}} / {{model}}" }
+      ],
+      "fieldConfig": { "defaults": { "min": 0 } }
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "Prefix-cache hit ratio / spec acceptance",
+      "gridPos": { "h": 6, "w": 12, "x": 24, "y": 7 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
+      "targets": [
+        { "expr": "hub_model_prefix_cache_hit{server=~\"$server\"}", "legendFormat": "prefix {{server}} / {{model}}" },
+        { "expr": "hub_model_spec_acceptance{server=~\"$server\"}", "legendFormat": "spec {{server}} / {{model}}" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "percentdecimal", "min": 0, "max": 1 } }
+    }
+  ]
+}

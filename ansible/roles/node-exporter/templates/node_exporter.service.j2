@@ -1,0 +1,23 @@
+[Unit]
+Description=Prometheus Node Exporter
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User={{ node_exporter_user }}
+Type=simple
+ExecStart={{ node_exporter_install_dir }}/node_exporter \
+  --web.listen-address={{ node_exporter_listen_address }} \
+{% if node_exporter_rootfs | length > 0 %}  --path.rootfs={{ node_exporter_rootfs }} \
+{% endif %}{% for c in node_exporter_disable_collectors %}  --no-collector.{{ c }} \
+{% endfor %}{% for c in node_exporter_extra_collectors %}  --collector.{{ c }} \
+{% endfor %}
+Restart=on-failure
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadOnlyInDirectories=/proc/sys
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

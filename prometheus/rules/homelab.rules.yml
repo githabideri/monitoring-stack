@@ -1,0 +1,97 @@
+---
+# homelab: recording-rule namespace.
+#
+# This file is part of the machine-facing interface: local administration
+# agents query these names instead of reconstructing multi-term PromQL
+# every time (see docs/agent-queries.md).
+#
+# Rules:
+#   - small in number, each one a genuinely useful health concept
+#   - stable once published (renames are breaking changes for agents)
+#   - naming: homelab:<concept>[:<aggregation>], ratio metrics are 0..1
+#   - no alerting rules here (phase 1 has no Alertmanager)
+
+groups:
+  - name: homelab.hosts
+    interval: 1m
+    rules:
+      # CPU utilisation, 5-minute smoothed (0..100)
+      - record: homelab:cpu_util:avg5m
+        expr: 100 - (avg_over_time(node_cpu_seconds_total{mode="idle"}[5m]) * 100)
+
+      # Load per core (1.0 == one core fully loaded)
+      - record: homelab:load_per_core
+        expr: node_load5 / count without (cpu, mode) (node_cpu_seconds_total{mode="idle"})
+
+      # Memory used ratio (0..1)
+      - record: homelab:mem_used:ratio
+        expr: 1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)
+
+      # Swap used ratio (0..1); 0 on hosts without swap
+      - record: homelab:swap_used:ratio
+        expr: 1 - (node_memory_SwapFree_bytes / node_memory_SwapTotal_bytes)
+
+      # Filesystem used ratio (0..1) on real filesystems
+      - record: homelab:fs_used:ratio
+        expr: >-
+          1 - (node_filesystem_avail_bytes{fstype!="tmpfs",fstype!~"overlay|squashfs"}
+               / node_filesystem_size_bytes{fstype!="tmpfs",fstype!~"overlay|squashfs"})
+
+      # Filesystem free bytes
+      - record: homelab:fs_free:bytes
+        expr: node_filesystem_avail_bytes{fstype!="tmpfs",fstype!~"overlay|squashfs"}
+
+  - name: homelab.storage
+    rules:
+      # ZFS ARC efficiency (0..1); higher is better. From node_exporter's
+      # zfs collector on hosts running Linux spl/FreeBSD zfs.
+      - record: homelab:zfs_arc_hit:ratio
+        expr: >-
+          (rate(zfs_arc_hits[5m])
+          /
+          (rate(zfs_arc_hits[5m]) + rate(zfs_arc_misses[5m]) or vector(1)))
+
+  - name: homelab.pbs
+    rules:
+      # PBS datastore used ratio (0..1)
+      - record: homelab:pbs_datastore_used:ratio
+        expr: pbs_used / pbs_size
+
+      # Age of the last backup per guest, in seconds.
+      # Stale-backup detection: homelab:backup_age_seconds > 2*86400
+      - record: homelab:backup_age_seconds
+        expr: time() - pbs_snapshot_vm_last_timestamp
+
+      # Verify status of the last backup per guest (1 = verified, 0 = not)
+      - record: homelab:backup_verified
+        expr: pbs_snapshot_vm_last_verify
+
+  - name: homelab.llm
+    rules:
+      # KV-cache usage per model (0..1)
+      - record: homelab:llm_kv_used:ratio
+        expr: avg by (server, model) (hub_model_kv_cache_used)
+
+      # Queue pressure: waiting requests per model
+      - record: homelab:llm_queue:sum
+        expr: sum by (server, model) (hub_model_requests_waiting)
+
+      # Generation throughput per model (tokens/s)
+      - record: homelab:llm_tokens_per_second
+        expr: avg by (server, model) (hub_model_tokens_per_second)
+
+      # GPU utilisation per physical GPU (0..100)
+      - record: homelab:gpu_utilization
+        expr: avg by (server, gpu) (hub_gpu_utilization_pct)
+
+      # Prefix-cache hit ratio (0..1)
+      - record: homelab:llm_prefix_cache_hit:ratio
+        expr: avg by (server, model) (hub_model_prefix_cache_hit)
+
+  - name: homelab.services
+    rules:
+      # Target up state — the canonical availability check for agents.
+      # (Prometheus' built-in `up` is the source; this recording rule
+      # gives a stable name that is not affected by job renames.)
+      - record: homelab:service_up
+        expr: up

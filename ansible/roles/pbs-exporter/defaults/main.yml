@@ -1,0 +1,21 @@
+---
+# natrontech/pbs-exporter (go binary). Central instance querying the PBS
+# API. Use a READ-ONLY PBS user (e.g. Audit/DatastoreAudit role on the
+# datastore) with an API token.
+pbs_exporter_version: "0.9.3"
+pbs_exporter_arch: amd64
+pbs_exporter_download_sha256: ""
+
+pbs_exporter_user: pbs-exporter
+pbs_exporter_install_dir: /usr/local/bin
+pbs_exporter_config_dir: /etc/pbs-exporter
+pbs_exporter_listen_address: "0.0.0.0:10019"
+
+# PBS endpoint, e.g. "https://10.0.0.18:8007"
+pbs_exporter_endpoint: "http://localhost:8007"
+# PBS uses self-signed certs by default
+pbs_exporter_insecure: true
+pbs_exporter_timeout: "10s"
+# API token (REQUIRED — put in site secrets, never in a committed file)
+pbs_exporter_api_token: ""
+pbs_exporter_token_name: "pbs-exporter"

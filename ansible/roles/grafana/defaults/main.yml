@@ -1,0 +1,24 @@
+---
+grafana_version: "11.6.0"
+grafana_arch: amd64
+grafana_download_sha256: ""
+
+grafana_user: grafana
+grafana_group: grafana
+grafana_install_dir: /usr/lib/grafana
+grafana_home: /var/lib/grafana
+grafana_config_dir: /etc/grafana
+grafana_dashboard_dir: /var/lib/grafana/dashboards
+
+# REQUIRED by the site playbook (never commit real passwords)
+grafana_admin_password: ""
+
+# Datasource
+grafana_prometheus_name: Prometheus
+# Intra-fleet address of the Prometheus LXC, e.g. "http://192.168.0.88:9090"
+grafana_prometheus_url: "http://localhost:9090"
+
+# Dashboard JSON files to deploy (paths on the control node)
+grafana_dashboard_files: []
+
+grafana_http_port: 3000

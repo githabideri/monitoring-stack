@@ -1,0 +1,20 @@
+[Unit]
+Description=Prometheus PBS Exporter (central)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User={{ pbs_exporter_user }}
+Group={{ pbs_exporter_user }}
+Type=simple
+EnvironmentFile={{ pbs_exporter_config_dir }}/pbs-exporter.env
+ExecStart={{ pbs_exporter_install_dir }}/pbs-exporter \
+  --pbs.listen-address={{ pbs_exporter_listen_address }}
+Restart=on-failure
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

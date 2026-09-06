@@ -1,0 +1,19 @@
+---
+node_exporter_version: "1.9.1"
+node_exporter_arch: amd64
+node_exporter_download_sha256: ""
+
+node_exporter_user: node_exporter
+node_exporter_install_dir: /usr/local/bin
+node_exporter_listen_address: "0.0.0.0:9100"
+
+# Collectors to DISABLE (default set runs otherwise).
+node_exporter_disable_collectors: []
+# Extra collectors to enable explicitly, e.g. [zfs] on ZFS hosts.
+# The zfs collector reads /proc/spl/kstat/zfs (Linux spl) or
+# /proc/spl/kstat/zfs on FreeBSD-style systems; enable per host.
+node_exporter_extra_collectors: []
+
+# When running inside a container, point --path.rootfs at the host root
+# (e.g. /host in LXC). Empty on bare hosts.
+node_exporter_rootfs: ""

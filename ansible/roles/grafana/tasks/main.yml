@@ -1,0 +1,120 @@
+---
+- name: Fail if admin password not provided
+  ansible.builtin.fail:
+    msg: "grafana_admin_password must be set (site playbook / secrets)"
+  when: grafana_admin_password | length == 0
+
+- name: Ensure grafana user
+  ansible.builtin.user:
+    name: "{{ grafana_user }}"
+    group: "{{ grafana_group }}"
+    system: true
+    shell: /usr/sbin/nologin
+    create_home: false
+
+- name: Ensure directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ grafana_user }}"
+    group: "{{ grafana_group }}"
+    mode: "0750"
+  loop:
+    - "{{ grafana_install_dir }}"
+    - "{{ grafana_home }}"
+    - "{{ grafana_config_dir }}"
+    - "{{ grafana_config_dir }}/provisioning/datasources"
+    - "{{ grafana_config_dir }}/provisioning/dashboards"
+    - "{{ grafana_dashboard_dir }}"
+
+- name: Download release tarball
+  ansible.builtin.get_url:
+    url: "https://dl.grafana.com/oss/release/grafana-{{ grafana_version }}.linux-{{ grafana_arch }}.tar.gz"
+    dest: "/tmp/grafana-{{ grafana_version }}.tar.gz"
+    mode: "0644"
+  register: grafana_download
+  until: not grafana_download.failed
+  retries: 3
+  delay: 10
+
+- name: Verify checksum (if provided)
+  ansible.builtin.command: sha256sum /tmp/grafana-{{ grafana_version }}.tar.gz
+  when: grafana_download_sha256 | length > 0
+  register: grafana_sum
+  changed_when: false
+
+- name: Fail on checksum mismatch
+  ansible.builtin.fail:
+    msg: "grafana tarball checksum mismatch"
+  when: >-
+    grafana_download_sha256 | length > 0
+    and (grafana_sum.stdout | default(''))[:64] != grafana_download_sha256
+
+- name: Extract
+  ansible.builtin.unarchive:
+    src: "/tmp/grafana-{{ grafana_version }}.tar.gz"
+    dest: "/tmp/grafana-extract"
+    remote_src: true
+
+- name: Install
+  ansible.builtin.command:
+    cmd: rsync -a --delete "/tmp/grafana-extract/grafana-{{ grafana_version }}" "{{ grafana_install_dir }}"
+    creates: "{{ grafana_install_dir }}/bin/grafana-server"
+
+- name: Deploy grafana.ini
+  ansible.builtin.template:
+    src: grafana.ini.j2
+    dest: "{{ grafana_config_dir }}/grafana.ini"
+    owner: "{{ grafana_user }}"
+    group: "{{ grafana_group }}"
+    mode: "0640"
+  notify: restart grafana
+
+- name: Deploy admin password env file
+  ansible.builtin.template:
+    src: grafana.env.j2
+    dest: "{{ grafana_config_dir }}/grafana.env"
+    owner: "{{ grafana_user }}"
+    group: "{{ grafana_group }}"
+    mode: "0640"
+  notify: restart grafana
+
+- name: Deploy datasource provisioning
+  ansible.builtin.template:
+    src: datasources.yml.j2
+    dest: "{{ grafana_config_dir }}/provisioning/datasources/datasources.yml"
+    owner: "{{ grafana_user }}"
+    group: "{{ grafana_group }}"
+    mode: "0640"
+  notify: restart grafana
+
+- name: Deploy dashboard provisioning
+  ansible.builtin.template:
+    src: dashboards.yml.j2
+    dest: "{{ grafana_config_dir }}/provisioning/dashboards/dashboards.yml"
+    owner: "{{ grafana_user }}"
+    group: "{{ grafana_group }}"
+    mode: "0640"
+  notify: restart grafana
+
+- name: Deploy dashboards
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "{{ grafana_dashboard_dir }}/"
+    owner: "{{ grafana_user }}"
+    group: "{{ grafana_group }}"
+    mode: "0640"
+  loop: "{{ grafana_dashboard_files }}"
+
+- name: Deploy systemd unit
+  ansible.builtin.template:
+    src: grafana.service.j2
+    dest: /etc/systemd/system/grafana.service
+    mode: "0644"
+  notify: restart grafana
+
+- name: Enable and start
+  ansible.builtin.systemd:
+    name: grafana
+    state: started
+    enabled: true

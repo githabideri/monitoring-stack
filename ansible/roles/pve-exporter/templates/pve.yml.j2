@@ -1,0 +1,19 @@
+---
+# prometheus-pve-exporter config.
+# "default" supplies credentials/defaults for every server entry;
+# named entries override with their own url (and optionally creds).
+default:
+  user: {{ (pve_exporter_servers.default | default({})).user | default('monitoring@pve') }}
+  token_name: {{ (pve_exporter_servers.default | default({})).token_name | default('scraper') }}
+  token_value: "{{ (pve_exporter_servers.default | default({})).token_value | default('') }}"
+  verify_ssl: {{ pve_exporter_verify_ssl }}
+{% for name, entry in (pve_exporter_servers | default({})).items() %}
+{% if name != 'default' %}
+{{ name }}:
+  url: "https://{{ entry.url }}:{{ entry.port | default(8006) }}"
+{% if entry.user is defined %}  user: {{ entry.user }}
+{% endif %}{% if entry.token_name is defined %}  token_name: {{ entry.token_name }}
+{% endif %}{% if entry.token_value is defined %}  token_value: "{{ entry.token_value }}"
+{% endif %}{% if entry.verify_ssl is defined %}  verify_ssl: {{ entry.verify_ssl }}
+{% endif %}{% endfor %}
+{% endfor %}

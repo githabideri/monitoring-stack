@@ -1,0 +1,75 @@
+---
+# Reference prometheus.yml — what a deployed config looks like.
+# The ansible role generates this from vars; this file is the readable
+# reference for people who deploy without ansible.
+#
+# Conventions (see docs/labeling.md):
+#   - job names are short and stable
+#   - per-job labels carry topology (site, role)
+#   - NO high-cardinality labels (no URLs, filenames, request ids, ...)
+
+global:
+  scrape_interval: 30s
+  evaluation_interval: 30s
+  external_labels:
+    site: vienna        # site-specific
+
+storage:
+  tsdb:
+    path: /var/lib/prometheus      # dedicated ZFS-backed dataset
+    retention:
+      time: 90d
+      size: 16GB                   # ~80-85% of the dataset quota
+
+rule_files:
+  - /etc/prometheus/rules.d/*.yml
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+        labels: { role: self }
+
+  - job_name: node-exporter
+    static_configs:
+      - targets:
+          - "10.0.0.1:9100"
+          - "10.0.0.2:9100"
+        labels: { role: host }
+
+  # Central pve-exporter: same target, two jobs — node metrics from each
+  # node, cluster metrics from exactly one node.
+  - job_name: pve-exporter-node
+    metrics_path: /metrics
+    params:
+      node: ["1"]
+    static_configs:
+      - targets: ["10.0.0.10:9221"]
+        labels: { role: pve-node }
+
+  - job_name: pve-exporter-cluster
+    metrics_path: /metrics
+    params:
+      cluster: ["1"]
+    static_configs:
+      - targets: ["10.0.0.10:9221"]
+        labels: { role: pve-cluster }
+
+  - job_name: pbs-exporter
+    static_configs:
+      - targets: ["10.0.0.10:10019"]
+        labels: { role: pbs }
+
+  # LLM endpoints — the hub aggregates per-server/model state
+  - job_name: llm-hub
+    scheme: https
+    tls_config:
+      insecure_skip_verify: true
+    static_configs:
+      - targets: ["10.0.0.20:8443"]
+        labels: { role: llm-hub }
+
+  - job_name: vllm
+    static_configs:
+      - targets: ["10.0.0.21:8000"]
+        labels: { role: llm-vllm }

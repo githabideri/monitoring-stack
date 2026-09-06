@@ -1,149 +1,848 @@
 {
-  "title": "GPU / LLM",
-  "uid": "homelab-gpu-llm",
-  "schemaVersion": 39,
-  "version": 2,
-  "editable": true,
-  "refresh": "30s",
-  "time": { "from": "now-24h", "to": "now" },
-  "tags": ["homelab", "llm"],
-  "templating": {
-    "list": [
-      {
-        "name": "server",
-        "label": "Server",
-        "type": "query",
-        "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
-        "query": "label_values(hub_gpu_utilization_pct, server)",
-        "sort": "alpha",
-        "includeAll": true,
-        "multi": true
-      }
-    ]
+  "annotations": {
+    "list": []
   },
+  "description": "--homelab-dashboard: gpu-llm. Question: are the inference models keeping up? Fleet state, throughput, latency, pressure (queue/KV/preemptions), hardware, cache.",
+  "editable": true,
+  "graphTooltip": 1,
+  "links": [
+    {
+      "title": "Overview",
+      "type": "link",
+      "url": "/d/homelab-overview"
+    }
+  ],
   "panels": [
     {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 600,
+      "panels": [],
+      "title": "Fleet state",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-homelab"
+      },
+      "description": "Hub sidecars serving metrics.",
+      "fieldConfig": {
+        "defaults": [
+          {
+            "unit": "short",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "red",
+                  "value": null
+                },
+                {
+                  "color": "green",
+                  "value": 1
+                }
+              ]
+            }
+          }
+        ],
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 0,
+        "y": 1
+      },
       "id": 1,
-      "type": "timeseries",
-      "title": "GPU utilisation (%)",
-      "description": "Recording rule: homelab:gpu_utilization",
-      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 0 },
-      "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
-      "targets": [{ "expr": "homelab:gpu_utilization{server=~\"$server\"}", "legendFormat": "{{server}} / {{gpu}}" }],
-      "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100 } }
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus-homelab"
+          },
+          "expr": "sum(hub_server_online)",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Hub servers online",
+      "type": "stat"
     },
     {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-homelab"
+      },
+      "description": "Model slots with a model loaded.",
+      "fieldConfig": {
+        "defaults": [
+          {
+            "unit": "short"
+          }
+        ],
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 8,
+        "y": 1
+      },
       "id": 2,
-      "type": "timeseries",
-      "title": "GPU VRAM (MiB)",
-      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 0 },
-      "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
+      "options": {
+        "colorMode": "none",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
       "targets": [
-        { "expr": "hub_gpu_memory_used_mib{server=~\"$server\"}", "legendFormat": "used {{server}} / {{gpu}}" },
-        { "expr": "hub_gpu_memory_total_mib{server=~\"$server\"}", "legendFormat": "total {{server}} / {{gpu}}" }
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus-homelab"
+          },
+          "expr": "count(hub_model_loaded == 1)",
+          "instant": true,
+          "refId": "A"
+        }
       ],
-      "fieldConfig": { "defaults": { "unit": "Mbytes", "min": 0 } }
+      "title": "Models loaded",
+      "type": "stat"
     },
     {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-homelab"
+      },
+      "description": "Count of vLLM engines with KV-cache data in the pipeline. 1 each, whether via the hub or the raw vllm: fallback (kv_source=vllm-raw). 0 with a loaded vLLM model = both sources dead \u2014 latency/KV panels are blind for that engine.",
+      "fieldConfig": {
+        "defaults": [
+          {
+            "unit": "short",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "red",
+                  "value": null
+                },
+                {
+                  "color": "green",
+                  "value": 1
+                }
+              ]
+            }
+          }
+        ],
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 16,
+        "y": 1
+      },
       "id": 3,
-      "type": "timeseries",
-      "title": "GPU temperature (°C)",
-      "description": "One unit per panel: temperature is celsius, power has its own panel.",
-      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 7 },
-      "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
+      "options": {
+        "colorMode": "none",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
       "targets": [
-        { "expr": "hub_gpu_temp_c{server=~\"$server\"}", "legendFormat": "{{server}} / {{gpu}}" }
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus-homelab"
+          },
+          "expr": "count(homelab:llm_kv_used:ratio) or vector(0)",
+          "instant": true,
+          "refId": "A"
+        }
       ],
-      "fieldConfig": { "defaults": { "unit": "celsius", "min": 0 } }
+      "title": "vLLM engines feeding KV",
+      "type": "stat"
     },
     {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 5
+      },
+      "id": 601,
+      "panels": [],
+      "title": "Throughput",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-homelab"
+      },
+      "description": "Decode throughput per model (exact-token rate). Flat 0 with a loaded model = idle, not broken; absent = no data.",
+      "fieldConfig": {
+        "defaults": [
+          {
+            "unit": "short",
+            "custom": {
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "lineWidth": 1
+            }
+          }
+        ],
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 6
+      },
       "id": 4,
-      "type": "timeseries",
-      "title": "GPU power (W)",
-      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 7 },
-      "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
       "targets": [
-        { "expr": "hub_gpu_power_w{server=~\"$server\"}", "legendFormat": "{{server}} / {{gpu}}" }
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus-homelab"
+          },
+          "expr": "homelab:llm_tokens_per_second",
+          "instant": false,
+          "legendFormat": "{{server}} {{model}}",
+          "refId": "A"
+        }
       ],
-      "fieldConfig": { "defaults": { "unit": "watt", "min": 0 } }
+      "title": "Decode tokens/s per model",
+      "type": "timeseries"
     },
     {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-homelab"
+      },
+      "description": "Prefill throughput per model \u2014 prompt processing capacity.",
+      "fieldConfig": {
+        "defaults": [
+          {
+            "unit": "short",
+            "custom": {
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "lineWidth": 1
+            }
+          }
+        ],
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 14
+      },
       "id": 5,
-      "type": "timeseries",
-      "title": "Generation throughput (tok/s)",
-      "description": "Recording rule: homelab:llm_tokens_per_second",
-      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 14 },
-      "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
-      "targets": [{ "expr": "homelab:llm_tokens_per_second{server=~\"$server\"}", "legendFormat": "{{server}} / {{model}}" }],
-      "fieldConfig": { "defaults": { "min": 0 } }
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus-homelab"
+          },
+          "expr": "homelab:llm_prompt_per_second",
+          "instant": false,
+          "legendFormat": "{{server}} {{model}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Prompt (prefill) tokens/s per model",
+      "type": "timeseries"
     },
     {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 22
+      },
+      "id": 602,
+      "panels": [],
+      "title": "Latency (p95)",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-homelab"
+      },
+      "description": "Time to first token. Absent between requests = no observation (honest gap, not zero).",
+      "fieldConfig": {
+        "defaults": [
+          {
+            "unit": "s",
+            "custom": {
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "lineWidth": 1
+            }
+          }
+        ],
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 23
+      },
       "id": 6,
-      "type": "timeseries",
-      "title": "Prompt processing (tok/s)",
-      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 14 },
-      "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
-      "targets": [{ "expr": "hub_model_prompt_tokens_per_second{server=~\"$server\"}", "legendFormat": "{{server}} / {{model}}" }],
-      "fieldConfig": { "defaults": { "min": 0 } }
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus-homelab"
+          },
+          "expr": "homelab:llm_ttft:seconds",
+          "instant": false,
+          "legendFormat": "{{server}} {{model}} {{queue_source}}",
+          "refId": "A"
+        }
+      ],
+      "title": "TTFT p95 (s)",
+      "type": "timeseries"
     },
     {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-homelab"
+      },
+      "description": "Per-token latency (decode speed experienced by the user). 50ms \u2248 20 tok/s.",
+      "fieldConfig": {
+        "defaults": [
+          {
+            "unit": "ms",
+            "custom": {
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "lineWidth": 1
+            }
+          }
+        ],
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 23
+      },
       "id": 7,
-      "type": "timeseries",
-      "title": "TTFT / TPOT p95 (s)",
-      "description": "vLLM-only metrics: absent when the model is served by llama.cpp (missing series, not zero).",
-      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 21 },
-      "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
       "targets": [
-        { "expr": "hub_model_ttft_p95_seconds{server=~\"$server\"}", "legendFormat": "ttft {{server}} / {{model}}" },
-        { "expr": "hub_model_tpot_p95_seconds{server=~\"$server\"}", "legendFormat": "tpot {{server}} / {{model}}" }
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus-homelab"
+          },
+          "expr": "homelab:llm_tpot:seconds * 1000",
+          "instant": false,
+          "legendFormat": "{{server}} {{model}} {{queue_source}}",
+          "refId": "A"
+        }
       ],
-      "fieldConfig": { "defaults": { "unit": "s", "min": 0 } }
+      "title": "TPOT p95 (ms)",
+      "type": "timeseries"
     },
     {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-homelab"
+      },
+      "description": "End-to-end request latency p95 (queue + prefill + decode).",
+      "fieldConfig": {
+        "defaults": [
+          {
+            "unit": "s",
+            "custom": {
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "lineWidth": 1
+            }
+          }
+        ],
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 31
+      },
       "id": 8,
-      "type": "timeseries",
-      "title": "Queue & running requests",
-      "description": "Both engines via or: vLLM (waiting/running) or llama.cpp (deferred/processing).",
-      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 21 },
-      "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
       "targets": [
-        { "expr": "(hub_model_requests_waiting or hub_model_requests_deferred){server=~\"$server\"}", "legendFormat": "queue {{server}} / {{model}}" },
-        { "expr": "(hub_model_requests_running or hub_model_requests_processing){server=~\"$server\"}", "legendFormat": "running {{server}} / {{model}}" }
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus-homelab"
+          },
+          "expr": "homelab:llm_e2e:seconds",
+          "instant": false,
+          "legendFormat": "{{server}} {{model}} {{queue_source}}",
+          "refId": "A"
+        }
       ],
-      "fieldConfig": { "defaults": { "min": 0 } }
+      "title": "E2E latency p95 (s)",
+      "type": "timeseries"
     },
     {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 39
+      },
+      "id": 603,
+      "panels": [],
+      "title": "Pressure \u2014 queue, KV cache, preemptions",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-homelab"
+      },
+      "description": "Waiting (deferred) vs running (active) requests per engine. A growing queue with flat decode rate = saturation.",
+      "fieldConfig": {
+        "defaults": [
+          {
+            "unit": "short",
+            "custom": {
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "lineWidth": 1
+            }
+          }
+        ],
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 40
+      },
       "id": 9,
-      "type": "timeseries",
-      "title": "KV cache used (0..1)",
-      "description": "vLLM-only metric.",
-      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 28 },
-      "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
-      "targets": [{ "expr": "hub_model_kv_cache_used{server=~\"$server\"}", "legendFormat": "{{server}} / {{model}}" }],
-      "fieldConfig": { "defaults": { "unit": "percentdecimal", "min": 0, "max": 1 } }
-    },
-    {
-      "id": 10,
-      "type": "timeseries",
-      "title": "KV-cache preemptions (1h count)",
-      "description": "vLLM-only counter; per-hour increase. (The hub's rolling-window gauge is not used with increase().)",
-      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 28 },
-      "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
-      "targets": [{ "expr": "increase(hub_model_preemptions_total{server=~\"$server\"}[1h])", "legendFormat": "{{server}} / {{model}}" }],
-      "fieldConfig": { "defaults": { "min": 0 } }
-    },
-    {
-      "id": 11,
-      "type": "timeseries",
-      "title": "Cache hit / speculative acceptance (0..1)",
-      "description": "Both engines: vLLM prefix_cache_hit or llama.cpp prompt_cache_hit; spec acceptance (llama.cpp).",
-      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 35 },
-      "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
       "targets": [
-        { "expr": "(hub_model_prefix_cache_hit or hub_model_prompt_cache_hit){server=~\"$server\"}", "legendFormat": "cache {{server}} / {{model}}" },
-        { "expr": "hub_model_spec_acceptance{server=~\"$server\"}", "legendFormat": "spec {{server}} / {{model}}" }
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus-homelab"
+          },
+          "expr": "homelab:llm_queue:sum",
+          "instant": false,
+          "legendFormat": "waiting: {{server}} {{model}} {{queue_source}}",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus-homelab"
+          },
+          "expr": "homelab:llm_running:sum",
+          "instant": false,
+          "legendFormat": "running: {{server}} {{model}} {{running_source}}",
+          "refId": "B"
+        }
       ],
-      "fieldConfig": { "defaults": { "unit": "percentdecimal", "min": 0, "max": 1 } }
+      "title": "Requests waiting / running",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-homelab"
+      },
+      "description": "KV-cache usage per vLLM engine (0..100). The *_source=vllm-raw series means the hub is serving it (hub parse down). Sustained >90% with preemptions = the model does not fit.",
+      "fieldConfig": {
+        "defaults": [
+          {
+            "unit": "percent",
+            "min": 0,
+            "max": 100,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 80
+                },
+                {
+                  "color": "red",
+                  "value": 95
+                }
+              ]
+            },
+            "custom": {
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "lineWidth": 1
+            }
+          }
+        ],
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 40
+      },
+      "id": 10,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus-homelab"
+          },
+          "expr": "homelab:llm_kv_used:ratio * 100",
+          "instant": false,
+          "legendFormat": "{{server}} {{model}} {{kv_source}} {{model_name}}",
+          "refId": "A"
+        }
+      ],
+      "title": "KV cache used (%)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-homelab"
+      },
+      "description": "Preemptions per second. Any sustained non-zero = requests being evicted from KV and restarted \u2014 the engine is oversubscribed.",
+      "fieldConfig": {
+        "defaults": [
+          {
+            "unit": "ops",
+            "custom": {
+              "drawStyle": "line",
+              "fillOpacity": 20,
+              "lineWidth": 1
+            }
+          }
+        ],
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 48
+      },
+      "id": 11,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus-homelab"
+          },
+          "expr": "homelab:llm_preemptions:rate",
+          "instant": false,
+          "legendFormat": "{{server}} {{model}} {{model_name}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Preemptions/s",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 56
+      },
+      "id": 604,
+      "panels": [],
+      "title": "Hardware & cache",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-homelab"
+      },
+      "fieldConfig": {
+        "defaults": [
+          {
+            "unit": "percent",
+            "min": 0,
+            "max": 100,
+            "custom": {
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "lineWidth": 1
+            }
+          }
+        ],
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 57
+      },
+      "id": 12,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus-homelab"
+          },
+          "expr": "homelab:gpu_utilization",
+          "instant": false,
+          "legendFormat": "{{server}} {{gpu}}",
+          "refId": "A"
+        }
+      ],
+      "title": "GPU utilisation (%)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-homelab"
+      },
+      "fieldConfig": {
+        "defaults": [
+          {
+            "unit": "mbytes",
+            "custom": {
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "lineWidth": 1
+            }
+          }
+        ],
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 57
+      },
+      "id": 13,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus-homelab"
+          },
+          "expr": "hub_gpu_memory_used_mib",
+          "instant": false,
+          "legendFormat": "{{server}} {{gpu}}",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus-homelab"
+          },
+          "expr": "hub_gpu_memory_total_mib",
+          "instant": false,
+          "legendFormat": "{{server}} {{gpu}} (total)",
+          "refId": "B"
+        }
+      ],
+      "title": "GPU VRAM used / total (MiB)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-homelab"
+      },
+      "description": "Prefix/prompt-cache hit ratio per model (0..100). A falling ratio on a stable workload = changing prompt shapes (or cache pressure).",
+      "fieldConfig": {
+        "defaults": [
+          {
+            "unit": "percent",
+            "min": 0,
+            "max": 100,
+            "custom": {
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "lineWidth": 1
+            }
+          }
+        ],
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 57
+      },
+      "id": 14,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus-homelab"
+          },
+          "expr": "homelab:llm_prefix_cache_hit:ratio * 100",
+          "instant": false,
+          "legendFormat": "{{server}} {{model}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Prefix/prompt cache hit (%)",
+      "type": "timeseries"
     }
-  ]
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": [
+    "homelab"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "GPU / LLM",
+  "uid": "homelab-gpu-llm",
+  "version": 1
 }

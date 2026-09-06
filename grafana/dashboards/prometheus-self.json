@@ -2,7 +2,7 @@
   "annotations": {
     "list": []
   },
-  "description": "--homelab-dashboard: storage-zfs. Question: how full and how healthy is storage? ZFS ARC on the PVE host, real filesystem usage/inodes, disk throughput and busyness, per-dataset activity.",
+  "description": "--homelab-dashboard: prometheus-self. Question: is monitoring itself trustworthy? TSDB footprint against the 16 GiB guard, series growth, scrape health, rule evaluation.",
   "editable": true,
   "graphTooltip": 1,
   "links": [
@@ -21,9 +21,9 @@
         "x": 0,
         "y": 0
       },
-      "id": 500,
+      "id": 700,
       "panels": [],
-      "title": "ZFS ARC",
+      "title": "Storage & scale",
       "type": "row"
     },
     {
@@ -31,7 +31,7 @@
         "type": "prometheus",
         "uid": "prometheus-homelab"
       },
-      "description": "Current ARC cache size vs its auto-tuned maximum.",
+      "description": "TSDB footprint: compacted blocks + in-memory head, against the 16 GiB retention guard in the config.",
       "fieldConfig": {
         "defaults": [
           {
@@ -40,8 +40,16 @@
               "mode": "absolute",
               "steps": [
                 {
-                  "color": "blue",
+                  "color": "green",
                   "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 8500000000.0
+                },
+                {
+                  "color": "red",
+                  "value": 13700000000.0
                 }
               ]
             }
@@ -71,12 +79,12 @@
             "type": "prometheus",
             "uid": "prometheus-homelab"
           },
-          "expr": "node_zfs_arc_size",
+          "expr": "prometheus_tsdb_storage_blocks_bytes + prometheus_tsdb_head_chunks_storage_size_bytes",
           "instant": true,
           "refId": "A"
         }
       ],
-      "title": "ARC size",
+      "title": "TSDB size (blocks + head)",
       "type": "stat"
     },
     {
@@ -84,27 +92,21 @@
         "type": "prometheus",
         "uid": "prometheus-homelab"
       },
-      "description": "ARC cache hit ratio over 5m. A falling trend = more read I/O than the cache absorbs.",
+      "description": "Active series in the head. Growth trend = label cardinality drift to investigate.",
       "fieldConfig": {
         "defaults": [
           {
-            "unit": "percent",
-            "min": 0,
-            "max": 100,
+            "unit": "short",
             "thresholds": {
               "mode": "absolute",
               "steps": [
                 {
-                  "color": "red",
+                  "color": "green",
                   "value": null
                 },
                 {
                   "color": "yellow",
-                  "value": 70
-                },
-                {
-                  "color": "green",
-                  "value": 85
+                  "value": 50000
                 }
               ]
             }
@@ -134,12 +136,12 @@
             "type": "prometheus",
             "uid": "prometheus-homelab"
           },
-          "expr": "homelab:zfs_arc_hit:ratio * 100",
+          "expr": "prometheus_tsdb_head_series",
           "instant": true,
           "refId": "A"
         }
       ],
-      "title": "ARC hit ratio (%)",
+      "title": "Active series (head)",
       "type": "stat"
     },
     {
@@ -147,24 +149,11 @@
         "type": "prometheus",
         "uid": "prometheus-homelab"
       },
-      "description": "Pool/pool-dataset state (1 = ONLINE). Values above 1 = degraded or worse.",
+      "description": "Samples per second accepted into the head.",
       "fieldConfig": {
         "defaults": [
           {
-            "unit": "short",
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                },
-                {
-                  "color": "red",
-                  "value": 2
-                }
-              ]
-            }
+            "unit": "cps"
           }
         ],
         "overrides": []
@@ -177,11 +166,11 @@
       },
       "id": 3,
       "options": {
-        "colorMode": "background",
-        "graphMode": "none",
+        "colorMode": "none",
+        "graphMode": "area",
         "reduceOptions": {
           "calcs": [
-            "max"
+            "lastNotNull"
           ]
         }
       },
@@ -191,24 +180,37 @@
             "type": "prometheus",
             "uid": "prometheus-homelab"
           },
-          "expr": "max(node_zfs_zpool_state)",
+          "expr": "rate(prometheus_tsdb_head_samples_appended_total[5m])",
           "instant": true,
           "refId": "A"
         }
       ],
-      "title": "ZFS pool state (max)",
+      "title": "Samples/s",
       "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 5
+      },
+      "id": 701,
+      "panels": [],
+      "title": "Scrape & rule health",
+      "type": "row"
     },
     {
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus-homelab"
       },
-      "description": "ARC size, LRU list (c) and its ceiling (c_max) over time. c hovering at c_max = the cache cannot grow; misses will rise.",
+      "description": "Targets per scrape job and health. down = the job's targets failing (the job-level view of the overview's target stats).",
       "fieldConfig": {
         "defaults": [
           {
-            "unit": "bytes",
+            "unit": "short",
             "custom": {
               "drawStyle": "line",
               "fillOpacity": 10,
@@ -222,7 +224,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 5
+        "y": 6
       },
       "id": 4,
       "options": {
@@ -240,33 +242,13 @@
             "type": "prometheus",
             "uid": "prometheus-homelab"
           },
-          "expr": "node_zfs_arc_size",
+          "expr": "sum by (scrape_job, health) (prometheus_target_scrape_pool_targets)",
           "instant": false,
-          "legendFormat": "size",
+          "legendFormat": "{{scrape_job}} ({{health}})",
           "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus-homelab"
-          },
-          "expr": "node_zfs_arc_c",
-          "instant": false,
-          "legendFormat": "c (LRU)",
-          "refId": "B"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus-homelab"
-          },
-          "expr": "node_zfs_arc_c_max",
-          "instant": false,
-          "legendFormat": "c_max (ceiling)",
-          "refId": "C"
         }
       ],
-      "title": "ARC size vs ceiling",
+      "title": "Targets per job (by health)",
       "type": "timeseries"
     },
     {
@@ -274,7 +256,7 @@
         "type": "prometheus",
         "uid": "prometheus-homelab"
       },
-      "description": "Hit/miss rates from which the hit ratio is computed. (This node_exporter build exports no ARC read/write byte counters \u2014 disk I/O is on the next row.)",
+      "description": "Scrapes per second per job. Prometheus 3.x no longer keeps scrape-duration quantiles, so this is the liveness check: a job at 0 is not scraping at all.",
       "fieldConfig": {
         "defaults": [
           {
@@ -292,7 +274,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 5
+        "y": 6
       },
       "id": 5,
       "options": {
@@ -310,67 +292,25 @@
             "type": "prometheus",
             "uid": "prometheus-homelab"
           },
-          "expr": "rate(node_zfs_arc_hits[5m])",
+          "expr": "sum by (job) (rate(prometheus_target_scrape_duration_seconds_count[5m]))",
           "instant": false,
-          "legendFormat": "hits/s",
+          "legendFormat": "{{job}}",
           "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus-homelab"
-          },
-          "expr": "rate(node_zfs_arc_misses[5m])",
-          "instant": false,
-          "legendFormat": "misses/s",
-          "refId": "B"
         }
       ],
-      "title": "ARC hits / misses",
+      "title": "Scrape rate per job (5m)",
       "type": "timeseries"
-    },
-    {
-      "collapsed": false,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 13
-      },
-      "id": 501,
-      "panels": [],
-      "title": "Filesystems",
-      "type": "row"
     },
     {
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus-homelab"
       },
-      "description": "Usage on real filesystems (ZFS dataset mounts, NFS/CIFS shares). Growth trends are visible at the default 7d range.",
+      "description": "Rule evaluation: failures (must stay 0) and group duration vs interval.",
       "fieldConfig": {
         "defaults": [
           {
-            "unit": "percent",
-            "min": 0,
-            "max": 100,
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                },
-                {
-                  "color": "yellow",
-                  "value": 75
-                },
-                {
-                  "color": "red",
-                  "value": 90
-                }
-              ]
-            },
+            "unit": "s",
             "custom": {
               "drawStyle": "line",
               "fillOpacity": 10,
@@ -378,11 +318,40 @@
             }
           }
         ],
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "failures.*"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "red",
+                      "value": 0.001
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 8,
-        "w": 12,
+        "w": 24,
         "x": 0,
         "y": 14
       },
@@ -402,29 +371,51 @@
             "type": "prometheus",
             "uid": "prometheus-homelab"
           },
-          "expr": "topk(8, max by (instance, mountpoint) (homelab:fs_used:ratio)) * 100",
+          "expr": "sum by (group) (prometheus_rule_group_last_duration_seconds)",
           "instant": false,
-          "legendFormat": "{{instance}} {{mountpoint}}",
+          "legendFormat": "{{group}} (duration)",
           "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus-homelab"
+          },
+          "expr": "sum(rate(prometheus_rule_evaluation_failures_total[5m]))",
+          "instant": false,
+          "legendFormat": "failures/s",
+          "refId": "B"
         }
       ],
-      "title": "Fullest filesystems (%)",
+      "title": "Rule evaluation (group duration / failures)",
       "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 22
+      },
+      "id": 702,
+      "panels": [],
+      "title": "Growth trends",
+      "type": "row"
     },
     {
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus-homelab"
       },
+      "description": "TSDB footprint over the retention window \u2014 the 90d/16GiB budget made visible.",
       "fieldConfig": {
         "defaults": [
           {
-            "unit": "percent",
-            "min": 0,
-            "max": 100,
+            "unit": "bytes",
             "custom": {
               "drawStyle": "line",
-              "fillOpacity": 10,
+              "fillOpacity": 20,
               "lineWidth": 1
             }
           }
@@ -434,8 +425,8 @@
       "gridPos": {
         "h": 8,
         "w": 12,
-        "x": 12,
-        "y": 14
+        "x": 0,
+        "y": 23
       },
       "id": 7,
       "options": {
@@ -453,27 +444,34 @@
             "type": "prometheus",
             "uid": "prometheus-homelab"
           },
-          "expr": "topk(8, max by (instance, mountpoint) (homelab:fs_inodes:ratio)) * 100",
+          "expr": "prometheus_tsdb_storage_blocks_bytes",
           "instant": false,
-          "legendFormat": "{{instance}} {{mountpoint}}",
+          "legendFormat": "blocks",
           "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus-homelab"
+          },
+          "expr": "prometheus_tsdb_head_chunks_storage_size_bytes",
+          "instant": false,
+          "legendFormat": "head",
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus-homelab"
+          },
+          "expr": "prometheus_tsdb_wal_storage_size_bytes",
+          "instant": false,
+          "legendFormat": "wal",
+          "refId": "C"
         }
       ],
-      "title": "Fullest filesystems by inodes (%)",
+      "title": "TSDB footprint (blocks / head / WAL)",
       "type": "timeseries"
-    },
-    {
-      "collapsed": false,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 22
-      },
-      "id": 502,
-      "panels": [],
-      "title": "Disk I/O & dataset activity",
-      "type": "row"
     },
     {
       "datasource": {
@@ -483,10 +481,10 @@
       "fieldConfig": {
         "defaults": [
           {
-            "unit": "Bps",
+            "unit": "short",
             "custom": {
               "drawStyle": "line",
-              "fillOpacity": 10,
+              "fillOpacity": 20,
               "lineWidth": 1
             }
           }
@@ -496,7 +494,7 @@
       "gridPos": {
         "h": 8,
         "w": 12,
-        "x": 0,
+        "x": 12,
         "y": 23
       },
       "id": 8,
@@ -515,9 +513,9 @@
             "type": "prometheus",
             "uid": "prometheus-homelab"
           },
-          "expr": "rate(node_disk_read_bytes_total[5m])",
+          "expr": "prometheus_tsdb_head_series",
           "instant": false,
-          "legendFormat": "{{device}} read",
+          "legendFormat": "head series",
           "refId": "A"
         },
         {
@@ -525,114 +523,13 @@
             "type": "prometheus",
             "uid": "prometheus-homelab"
           },
-          "expr": "rate(node_disk_written_bytes_total[5m])",
+          "expr": "prometheus_tsdb_blocks_loaded",
           "instant": false,
-          "legendFormat": "{{device}} write",
+          "legendFormat": "blocks loaded",
           "refId": "B"
         }
       ],
-      "title": "Disk throughput",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus-homelab"
-      },
-      "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "percentunit",
-            "min": 0,
-            "max": 1,
-            "custom": {
-              "drawStyle": "line",
-              "fillOpacity": 10,
-              "lineWidth": 1
-            }
-          }
-        ],
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 23
-      },
-      "id": 9,
-      "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "multi"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus-homelab"
-          },
-          "expr": "homelab:disk_io_util",
-          "instant": false,
-          "legendFormat": "{{instance}} {{device}}",
-          "refId": "A"
-        }
-      ],
-      "title": "Disk busy (%)",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus-homelab"
-      },
-      "description": "Writes per second per ZFS dataset (sector ops) \u2014 which datasets are actually doing I/O.",
-      "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "ops",
-            "custom": {
-              "drawStyle": "line",
-              "fillOpacity": 10,
-              "lineWidth": 1
-            }
-          }
-        ],
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 24,
-        "x": 0,
-        "y": 31
-      },
-      "id": 10,
-      "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "multi"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus-homelab"
-          },
-          "expr": "topk(10, rate(node_zfs_zpool_dataset_nwritten[5m]))",
-          "instant": false,
-          "legendFormat": "{{dataset}}",
-          "refId": "A"
-        }
-      ],
-      "title": "Dataset write ops (top 10)",
+      "title": "Series & blocks over time",
       "type": "timeseries"
     }
   ],
@@ -645,12 +542,12 @@
     "list": []
   },
   "time": {
-    "from": "now-7d",
+    "from": "now-24h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
-  "title": "Storage / ZFS",
-  "uid": "homelab-storage-zfs",
+  "title": "Prometheus Self",
+  "uid": "homelab-prometheus-self",
   "version": 1
 }

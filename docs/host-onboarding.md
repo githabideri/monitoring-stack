@@ -40,9 +40,10 @@ job's `targets` (or add a new job with an appropriate `role` label):
   labels: { role: host }
 ```
 
-Some exporters need URL params (e.g. pve-exporter: `params:
-{node: "1"}` / `{cluster: "1"}`). Contract: a param value must be a
-**string** (rendered as a single-value list) or a **list of strings** —
+Some exporters need URL params (e.g. pve-exporter's /pve endpoint:
+`params: {module: "<name>", target: "<pve-host:8006>", node: "1"}` /
+`{..., cluster: "1"}`). Contract: a param value must be a **string**
+(rendered as a single-value list) or a **list of strings** —
 integers, booleans and dicts are rejected by the role's validation task
 (wrap scalars in quotes: `node: "1"`), and a string is never split into
 characters.
@@ -57,8 +58,14 @@ curl -s "localhost:9090/api/v1/query?query=up{job=\"node-exporter\",instance=\"1
 ## Other exporters
 
 - **PVE node** — add an entry to `pve_exporter_servers` in the
-  Prometheus LXC's vars (read-only token per node). No per-host
-  installation; the central exporter picks it up.
+  Prometheus LXC's vars (read-only token per node; the module name must
+  match the scrape job's `module` param, and the job's `target` param
+  must be `<pve-host:8006>`). No per-host installation; the central
+  exporter picks it up. PVE 9 pveum note: tokens default to
+  `privsep=1` (separate ACL set), so grant the token itself, e.g.
+  `pveum acl modify / -token 'user@pve!name' -role PVEAuditor` —
+  a privsep token with an empty set fails every permission check even
+  though its user has the role.
 - **LLM endpoint** — add a job targeting `<host:port>/metrics`
   (vLLM, llama.cpp, or the hub). The hub needs
   `scheme: https` + `tls_insecure_skip_verify: true` for self-signed

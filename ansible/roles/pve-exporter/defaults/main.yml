@@ -11,14 +11,19 @@ pve_exporter_user: pve-exporter
 pve_exporter_listen_address: "0.0.0.0:9221"
 pve_exporter_config_dir: /etc/pve-exporter
 
-# pve.yml modules. "default" is the fallback; each other key is a named
-# server entry. Keys per entry: url, user, token_name, token_value,
-# verify_ssl (bool).
+# pve.yml modules (prometheus-pve-exporter 3.x). Each module is a
+# standalone PVE entry with its own credentials. Keys per entry:
+# user, token_name, token_value, verify_ssl (bool). There is no
+# "default" merge in 3.x — write every module in full. The PVE API
+# host is NOT in this config; it goes into the Prometheus scrape job
+# as the `target` param of the /pve endpoint ("host:8006").
 #
 # Example:
 #   pve_exporter_servers:
-#     default: {user: "monitoring@pve", token_name: "scraper", token_value: "xxx"}
-#     node1:   {url: "https://10.0.0.1:8006", user: "monitoring@pve", token_name: "scraper", token_value: "xxx"}
+#     locmox:
+#       user: "monitoring@pve"
+#       token_name: "scraper"
+#       token_value: "<uuid>"
 pve_exporter_servers: {}
 
 # PVE API uses self-signed certs on most homelab setups

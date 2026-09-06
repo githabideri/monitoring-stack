@@ -12,7 +12,7 @@
 
 meta:
   prometheus: the Prometheus LXC, http://PROM:9090, no auth (LAN/TS only)
-  grafana: the Grafana LXC (reverse-proxied, see configs/), datasource uid prometheus-homelab
+  grafana: the Grafana LXC (behind the site's reverse proxy; the datasource points at the Prometheus LXC), datasource uid prometheus-homelab
   recording_rules: prometheus/rules/homelab.rules.yml (groups: homelab.hosts, homelab.storage, homelab.pbs, homelab.llm, homelab.services)
   dashboard_contract: docs/dashboard-design.md
 
@@ -118,7 +118,7 @@ raw_zfs:
     note: "1 = ONLINE (0 OFFLINE, 2 DEGRADED, 3 FAULTED, ...)"
 
 raw_pve:
-  # Central pve-exporter 3.10 (venv in CT 388). DATA endpoint is /pve
+  # Central pve-exporter 3.10, running inside the Prometheus LXC. DATA endpoint is /pve
   # with query params module/target/cluster/node; /metrics is self only:
   #   pve_last_scrape_error_message, pve_last_scrape_success_timestamp_seconds,
   #   pve_request_errors_total, pve_scrapes_total, pve_scrape_duration_seconds
@@ -177,7 +177,7 @@ raw_pbs:
   pbs_snapshot_vm_count:
     kind: gauge
     labels: [datastore, namespace, vm_id, vm_name]
-    note: "one series per VM ever backed up (111 on 2026-09-06). namespace = source host name (one per backed-up host)."
+    note: "one series per guest ever backed up. namespace = source host name (one per backed-up host); decommissioned hosts leave their historical namespace behind (see the Backups dashboard)."
   pbs_snapshot_vm_last_timestamp:
     kind: gauge
     unit: unix_seconds
@@ -210,7 +210,7 @@ raw_llm:
     kind: gauge
   hub_vllm_metrics_ok:
     kind: gauge
-    note: "vLLM models only. 1 = hub parsed the engine's /metrics, 0 = parse failed (that model's hub_model_* queue/kv/latency series are then ABSENT — fall back to raw vllm:*). vllm-3090 is currently 0."
+    note: "vLLM models only. 1 = hub parsed the engine's /metrics, 0 = parse failed (that model's hub_model_* queue/kv/latency series are then ABSENT — fall back to raw vllm:*, which the recording rules do automatically)."
   hub_model_tokens_per_second:
     kind: gauge
     note: "decode throughput of active generation"
@@ -225,7 +225,7 @@ raw_llm:
   hub_model_kv_cache_used:
     kind: gauge
     unit: ratio (hub normalizes 0..100 builds to 0..1)
-    note: "vLLM only. ABSENT for vllm-3090 today (hub parse gap) — raw vllm:kv_cache_usage_perc is the live source."
+    note: "vLLM only. May be ABSENT when the hub's parse for that engine fails (hub_vllm_metrics_ok == 0) — then raw vllm:kv_cache_usage_perc is the live source (the recording rule tags it kv_source=vllm-raw)."
   hub_model_prefix_cache_hit / hub_model_prompt_cache_hit:
     kind: gauge
     note: "vLLM vs llama.cpp cache-hit ratios (0..1)"
@@ -261,7 +261,7 @@ raw_vllm:
     kind: gauge
   vllm:kv_cache_usage_perc:
     kind: gauge
-    note: "0..1 — the only live KV gauge today"
+    note: "0..1 — the vLLM KV gauge"
   vllm:inter_token_latency_seconds / vllm:e2e_request_latency_seconds:
     kind: histogram
     note: "use histogram_quantile(0.95, sum by (le) (rate(...[5m])))"

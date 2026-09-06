@@ -1,9 +1,11 @@
 # monitoring-stack
 
-If you're building homelab monitoring around Proxmox and ZFS, this repo gives
-you a working starting point instead of a pile of disconnected examples. It
-covers deployment, storage, backups, host onboarding, dashboards, and the
-split between reusable config and private site data.
+Reproducible monitoring for a Proxmox + ZFS homelab: version-controlled
+Grafana dashboards, a stable PromQL layer for local administration agents,
+Ansible deployment, TSDB backup/recovery, and a live-verification script
+that refuses to call anything "done" without live data behind it. It
+covers deployment, storage, backups, host onboarding, and the split
+between reusable config and private site data.
 
 The same Prometheus data is also consumed by local administration agents.
 Labels and recording rules are kept predictable so agents can inspect system
@@ -16,10 +18,13 @@ ansible/               Roles: prometheus, grafana, node-exporter,
                        pve-exporter, pbs-exporter (+ example playbook/inventory)
 prometheus/            Reference scrape config (examples/) and the
                        homelab: recording-rule namespace (rules/)
-grafana/               Provisioning (datasource + dashboards) and the
-                       dashboard JSONs
-scripts/tsdb-backup/   TSDB snapshot → NAS copy, with systemd service/timer
-docs/                  architecture, labeling, agent-queries, host-onboarding,
+grafana/               Provisioning (datasource + dashboards) and the seven
+                       dashboard JSONs (see docs/dashboard-design.md)
+scripts/               verify-monitoring.py (post-deploy verification)
+                       tsdb-backup/ (TSDB snapshot -> NAS, systemd units)
+docs/                  architecture, labeling, agent-queries,
+                       dashboard-design (the dashboard contract),
+                       metrics (the metric catalog), host-onboarding,
                        retention, recovery
 ```
 
@@ -41,8 +46,23 @@ Grafana LXC     <------ humans (dashboards)
   time **and** size capped (default 90 days / 16 GiB, measured and
   adjustable).
 - **Grafana** runs in its own LXC with a provisioned Prometheus datasource
-  and a small set of dashboards. Grafana is for humans; it is not the
-  machine-facing API.
+  and **seven operational dashboards** — one per question (is anything
+  wrong / what's wrong with this host / are we protected / what is the PVE
+  fleet doing / is storage healthy / are the inference models keeping up /
+  is monitoring itself trustworthy). The org home dashboard is the fleet
+  overview, set in `grafana.ini` ([dashboards] section — see the
+  dashboard contract in `docs/dashboard-design.md`). Dashboards are plain
+  JSON in git; provisioning imports them, the UI is for browsing.
+- **The `homelab:` recording-rule namespace is the machine-facing contract**:
+  few, stable, unit-normalized names with explicit zero/absent semantics,
+  documented in `docs/metrics.yml` (the metric catalog) and
+  `docs/agent-queries.md`. Agents query Prometheus directly; they do not
+  scrape Grafana.
+- **Verification is a first-class artifact**: `scripts/verify-monitoring.py`
+  checks targets, rule health, that every dashboard expression returns
+  live series, that the dashboards are in the Grafana store, and that the
+  home dashboard is actually served — run it after every change; a PASS is
+  the bar for calling the stack healthy.
 - **pve-exporter** and **pbs-exporter** run *centrally inside the
   Prometheus LXC* and query PVE nodes / the PBS API over the network.
   They need read-only API credentials (e.g. a PVE `PVEAuditor` user per

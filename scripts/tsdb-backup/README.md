@@ -11,17 +11,24 @@ verification:
 
 - every top-level block dir in the copy contains `meta.json`, `index`, and
   `chunks/` (the Prometheus 3.x snapshot layout — a static copy of the TSDB,
-  one block dir per 2-hour window; 2.x used `index/`+`chunks/` directly),
+  one block dir per 2-hour window),
 - the file count of the copy equals the file count of the source,
 - the copy's byte size is ≥ 90% of the source's (catches truncated writes
   that keep the file count).
 
+**Compatibility:** tested and supported on **Prometheus 3.14**; snapshot
+verification targets the 3.x block layout. The snapshot-name parser also
+accepts the older 2.x `filename` API key (harmless fallback), but 2.x
+snapshot layout / restore behavior is **not** claimed as supported —
+verification would fail on a 2.x snapshot, which is the safe outcome.
+
 Any failure (mount missing, not writable, rsync error, verification
 failure) removes the partial/failed destination copy, **keeps the local
-snapshot for the next attempt**, and exits non-zero (visible in the
-journal / `systemctl list-timers` / the failed unit). A failed run never
-deletes local data, and it never leaves a corrupted copy in DEST that a
-future restore could pick up.
+snapshot until later cleanup** (pruned after 2 days), so the failed copy
+does not destroy the only snapshot created by that run, and exits
+non-zero (visible in the journal / `systemctl list-timers` / the failed
+unit). A failed run never deletes local data, and it never leaves a
+corrupted copy in DEST that a future restore could pick up.
 
 ## Retry model
 

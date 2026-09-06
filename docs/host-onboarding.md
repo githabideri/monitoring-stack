@@ -41,9 +41,11 @@ job's `targets` (or add a new job with an appropriate `role` label):
 ```
 
 Some exporters need URL params (e.g. pve-exporter: `params:
-{node: "1"}` / `{cluster: "1"}`). In the inventory a param value may be a
-scalar (rendered as a single-value list) or a list of strings; the
-template handles both, strings are never split into characters.
+{node: "1"}` / `{cluster: "1"}`). Contract: a param value must be a
+**string** (rendered as a single-value list) or a **list of strings** —
+integers, booleans and dicts are rejected by the role's validation task
+(wrap scalars in quotes: `node: "1"`), and a string is never split into
+characters.
 
 Re-run the prometheus role. Verify:
 

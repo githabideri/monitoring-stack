@@ -27,7 +27,8 @@ prometheus_external_labels: {}
 #   job:            job name (stable, short)
 #   targets:        list of "host:port"
 #   metrics_path:   (default /metrics)
-#   params:         scrape url params, e.g. {node: ["1"]}
+#   params:         scrape url params, e.g. {node: "1"} — values must be a
+#                  string or a list of strings (validated; int/bool/dict rejected)
 #   labels:         per-job extra labels, e.g. {site: vienna, role: pve-node}
 #   scheme:         (default http)
 #   basic_auth_user / basic_auth_pass: optional

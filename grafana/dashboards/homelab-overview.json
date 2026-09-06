@@ -136,7 +136,7 @@
       "id": 11,
       "type": "timeseries",
       "title": "ZFS ARC hit ratio (0..1)",
-      "description": "Recording rule: homelab:zfs_arc_hit:ratio — 0 when the cache sees no traffic.",
+      "description": "Recording rule: homelab:zfs_arc_hit:ratio — absent (no data) when the cache sees no traffic; an explicit 0 means a measured 0% hit rate.",
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 19 },
       "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
       "targets": [{ "expr": "homelab:zfs_arc_hit:ratio", "legendFormat": "{{instance}}" }],

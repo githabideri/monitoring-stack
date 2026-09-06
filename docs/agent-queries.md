@@ -38,7 +38,8 @@ homelab:fs_used:ratio
 # Free bytes per mount
 homelab:fs_free:bytes
 
-# ZFS ARC efficiency (0..1; sustained < 0.8 is a smell)
+# ZFS ARC efficiency (0..1; sustained < 0.8 is a smell). Absent = no ARC
+# activity in that interval (not a measured 0); no NaN is emitted.
 homelab:zfs_arc_hit:ratio
 
 # Growth of the most full filesystems over 7 days (delta of used ratio)

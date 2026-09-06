@@ -53,7 +53,9 @@ mountpoint -q "$DEST" 2>/dev/null || { log "ERROR: DEST $DEST is not a mountpoin
 #    2.x: {"status":"success","data":{"filename":"..."}},
 #    3.x: {"status":"success","data":{"name":"..."}} (key renamed).
 #    The grep tolerates optional whitespace after the colon; the sed extracts
-#    the last quoted string of the match.
+#    the last quoted string of the match. The `filename` fallback is
+#    response-key tolerance only — verification below targets the 3.x block
+#    layout and will (correctly) reject a 2.x snapshot.
 log "requesting snapshot from $PROM_URL"
 snap_json="$(curl -fsS -X POST "$PROM_URL/api/v1/admin/tsdb/snapshot")" || { log "ERROR: snapshot request failed"; exit 2; }
 fname="$(echo "$snap_json" | grep -oE '"(filename|name)"[[:space:]]*:[[:space:]]*"[^"]+"' | head -1 | sed -E 's/.*"([^"]+)"$/\1/')"

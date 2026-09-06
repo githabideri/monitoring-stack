@@ -66,14 +66,15 @@ groups:
       # NOTE: metric names are node_zfs_* (the zfs_exporter-style zfs_* never match),
       # and pool-level node_zpool_* do NOT exist on PVE's SPL (no /proc/spl/.../zpool_*/io)
       # — pool usage is covered by homelab:fs_used:ratio on the dataset filesystems.
-      # On an idle system both rates are 0: the ratio is NaN, so the `and` drops it
-      # and the `or` branch emits an explicit 0 ("no traffic, no signal").
+      # On an idle interval both rates are 0 and no meaningful ratio exists:
+      # the `and` gate makes the rule EMIT NO SAMPLE (absence = no observation,
+      # per the machine-facing semantics; an explicit 0 still means a measured
+      # 0% hit rate during real activity).
       - record: homelab:zfs_arc_hit:ratio
         expr: >-
           (rate(node_zfs_arc_hits[5m])
            / (rate(node_zfs_arc_hits[5m]) + rate(node_zfs_arc_misses[5m])))
           and (rate(node_zfs_arc_hits[5m]) + rate(node_zfs_arc_misses[5m]) > 0)
-          or (rate(node_zfs_arc_hits[5m]) + rate(node_zfs_arc_misses[5m]) == 0) * 0
 
   - name: homelab.pbs
     rules:

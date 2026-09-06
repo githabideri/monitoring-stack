@@ -49,10 +49,10 @@ scrape_configs:
 {% endfor %}
 {% endif %}
 {% if job.params | default({}) | length > 0 %}
-    # Prometheus params: each value is a list of strings. Inventory may give
-    # a scalar (string) or a list; a string is ONE value, never a sequence of
-    # characters (Jinja treats strings as sequences, so the wrap below is
-    # explicit). Dicts are not supported here.
+    # Prometheus params: each value renders as a list of strings. The
+    # inventory contract is: a STRING (rendered as a single-value list) or a
+    # LIST OF STRINGS. Integers/bools/dicts are rejected by the role's
+    # validation task (wrap scalars in quotes: node: "1").
     params:
 {% for k, v in (job.params | default({})).items() %}
       {{ k }}:

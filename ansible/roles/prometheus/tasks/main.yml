@@ -1,4 +1,35 @@
 ---
+# Contract: prometheus_scrape_configs[].params values must be a string or a
+# list of strings. Fail fast here with a clear message instead of letting
+# an int/bool/dict blow up as a Jinja exception during template render.
+- name: Collect scrape-config params as (key, value) pairs
+  ansible.builtin.set_fact:
+    _params_pairs: >-
+      {{ (_params_pairs | default([])) + (item | map('list') | list) }}
+  loop: >-
+    {{ prometheus_scrape_configs
+       | selectattr('params', 'defined')
+       | map(attribute='params')
+       | map('dictsort')
+       | list }}
+  no_log: true
+
+- name: Validate scrape config params (string or list of strings)
+  ansible.builtin.assert:
+    that:
+      - item is sequence and (item | length == 2)
+        and (item[1] is string or
+             (item[1] is sequence and not item[1] is mapping and
+              (item[1] | select('string') | list | length == item[1] | length)))
+    fail_msg: >-
+      prometheus_scrape_configs[].params values must be a string or a list
+      of strings; offending entry: {{ item | to_json }} (got
+      {{ item[1] | type_debug }} for key {{ item[0] }}) — wrap scalars in
+      quotes, e.g. {{ item[0] }}: "{{ item[1] }}"
+  loop: "{{ _params_pairs }}"
+  no_log: true
+  when: _params_pairs | default([]) | length > 0
+
 - name: Ensure prometheus group
   ansible.builtin.group:
     name: "{{ prometheus_group }}"

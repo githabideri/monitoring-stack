@@ -43,13 +43,17 @@ groups:
 
   - name: homelab.storage
     rules:
-      # ZFS ARC efficiency (0..1); higher is better. From node_exporter's
-      # zfs collector on hosts running Linux spl/FreeBSD zfs.
+      # ZFS ARC efficiency (0..1); higher is better. From node_exporter's zfs
+      # collector — on PVE 9.2 (SPL 2.4) the /proc/spl/kstat/zfs files gain a leading
+      # metadata line but the parser skips past it, so all node_zfs_* metrics work.
+      # NOTE: metric names are node_zfs_* (the zfs_exporter-style zfs_* never match),
+      # and pool-level node_zpool_* do NOT exist on PVE's SPL (no /proc/spl/.../zpool_*/io)
+      # — pool usage is covered by homelab:fs_used:ratio on the dataset filesystems.
       - record: homelab:zfs_arc_hit:ratio
         expr: >-
-          (rate(zfs_arc_hits[5m])
+          rate(node_zfs_arc_hits[5m])
           /
-          (rate(zfs_arc_hits[5m]) + rate(zfs_arc_misses[5m]) or vector(1)))
+          (rate(node_zfs_arc_hits[5m]) + rate(node_zfs_arc_misses[5m]) or vector(1))
 
   - name: homelab.pbs
     rules:

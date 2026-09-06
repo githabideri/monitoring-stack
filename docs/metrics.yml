@@ -167,7 +167,7 @@ raw_pve:
     kind: info / gauge
 
 raw_pbs:
-  # Central pbs-exporter (natrontech) against PBS 4.x on the Proxmox Backup Server.
+  # Central pbs-exporter (natrontech) against PBS 3.3 on the Proxmox Backup Server.
   pbs_up:
     kind: gauge
   pbs_size / pbs_used / pbs_available:

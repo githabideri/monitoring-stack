@@ -40,6 +40,11 @@ job's `targets` (or add a new job with an appropriate `role` label):
   labels: { role: host }
 ```
 
+Some exporters need URL params (e.g. pve-exporter: `params:
+{node: "1"}` / `{cluster: "1"}`). In the inventory a param value may be a
+scalar (rendered as a single-value list) or a list of strings; the
+template handles both, strings are never split into characters.
+
 Re-run the prometheus role. Verify:
 
 ```bash

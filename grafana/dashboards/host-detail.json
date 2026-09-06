@@ -2,18 +2,26 @@
   "title": "Host Detail",
   "uid": "homelab-host-detail",
   "schemaVersion": 39,
-  "version": 1,
+  "version": 2,
   "editable": true,
   "refresh": "30s",
-  "time": { "from": "now-6h", "to": "now" },
-  "tags": ["homelab"],
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "tags": [
+    "homelab"
+  ],
   "templating": {
     "list": [
       {
         "name": "instance",
         "label": "Host",
         "type": "query",
-        "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus-homelab"
+        },
         "query": "label_values(homelab:cpu_util:avg5m, instance)",
         "sort": "alpha",
         "includeAll": false,
@@ -26,90 +34,237 @@
       "id": 1,
       "type": "timeseries",
       "title": "CPU utilisation (%)",
-      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 0 },
-      "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
-      "targets": [{ "expr": "homelab:cpu_util:avg5m{instance=\"$instance\"}", "legendFormat": "cpu" }],
-      "fieldConfig": { "defaults": { "unit": "percent" } }
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-homelab"
+      },
+      "targets": [
+        {
+          "expr": "homelab:cpu_util:avg5m{instance=\"$instance\"}",
+          "legendFormat": "cpu"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent"
+        }
+      }
     },
     {
       "id": 2,
       "type": "timeseries",
       "title": "Load (per core)",
-      "gridPos": { "h": 7, "w": 6, "x": 12, "y": 0 },
-      "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
-      "targets": [{ "expr": "homelab:load_per_core{instance=\"$instance\"}", "legendFormat": "load/core" }]
+      "gridPos": {
+        "h": 7,
+        "w": 6,
+        "x": 12,
+        "y": 0
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-homelab"
+      },
+      "targets": [
+        {
+          "expr": "homelab:load_per_core{instance=\"$instance\"}",
+          "legendFormat": "load/core"
+        }
+      ]
     },
     {
       "id": 3,
       "type": "timeseries",
       "title": "Uptime (h)",
-      "gridPos": { "h": 7, "w": 6, "x": 18, "y": 0 },
-      "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
-      "targets": [{ "expr": "node_time_seconds{instance=\"$instance\"} - node_boot_time_seconds{instance=\"$instance\"}", "legendFormat": "uptime", "instant": true }],
-      "fieldConfig": { "defaults": { "unit": "h" } }
+      "gridPos": {
+        "h": 7,
+        "w": 6,
+        "x": 18,
+        "y": 0
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-homelab"
+      },
+      "targets": [
+        {
+          "expr": "node_time_seconds{instance=\"$instance\"} - node_boot_time_seconds{instance=\"$instance\"}",
+          "legendFormat": "uptime",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "h"
+        }
+      }
     },
     {
       "id": 4,
       "type": "timeseries",
       "title": "Memory (%)",
-      "gridPos": { "h": 7, "w": 8, "x": 24, "y": 0 },
-      "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 0,
+        "y": 7
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-homelab"
+      },
       "targets": [
-        { "expr": "homelab:mem_used:ratio{instance=\"$instance\"} * 100", "legendFormat": "mem" },
-        { "expr": "homelab:swap_used:ratio{instance=\"$instance\"} * 100", "legendFormat": "swap" }
+        {
+          "expr": "homelab:mem_used:ratio{instance=\"$instance\"} * 100",
+          "legendFormat": "mem"
+        },
+        {
+          "expr": "homelab:swap_used:ratio{instance=\"$instance\"} * 100",
+          "legendFormat": "swap"
+        }
       ],
-      "fieldConfig": { "defaults": { "unit": "percent" } }
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent"
+        }
+      },
+      "description": "Recording rules: homelab:mem_used:ratio, homelab:swap_used:ratio (swap reports 0 on hosts without swap)."
     },
     {
       "id": 5,
       "type": "timeseries",
       "title": "Disk capacity (%)",
-      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 7 },
-      "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
-      "targets": [{ "expr": "homelab:fs_used:ratio{instance=\"$instance\"} * 100", "legendFormat": "{{mountpoint}} ({{fstype}})" }],
-      "fieldConfig": { "defaults": { "unit": "percent" } }
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 8,
+        "y": 7
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-homelab"
+      },
+      "targets": [
+        {
+          "expr": "homelab:fs_used:ratio{instance=\"$instance\"} * 100",
+          "legendFormat": "{{mountpoint}} ({{fstype}})"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent"
+        }
+      }
     },
     {
       "id": 6,
       "type": "timeseries",
       "title": "Disk IO (B/s)",
-      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 7 },
-      "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 16,
+        "y": 7
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-homelab"
+      },
       "targets": [
-        { "expr": "rate(node_disk_read_bytes_total{instance=\"$instance\"}[5m])", "legendFormat": "read {{device}}" },
-        { "expr": "rate(node_disk_written_bytes_total{instance=\"$instance\"}[5m])", "legendFormat": "write {{device}}" }
+        {
+          "expr": "rate(node_disk_read_bytes_total{instance=\"$instance\"}[5m])",
+          "legendFormat": "read {{device}}"
+        },
+        {
+          "expr": "rate(node_disk_written_bytes_total{instance=\"$instance\"}[5m])",
+          "legendFormat": "write {{device}}"
+        }
       ]
     },
     {
       "id": 7,
       "type": "timeseries",
       "title": "Network (B/s)",
-      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 7 },
-      "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 0,
+        "y": 15
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-homelab"
+      },
       "targets": [
-        { "expr": "rate(node_network_receive_bytes_total{instance=\"$instance\",device!~\"lo\"}[5m])", "legendFormat": "rx {{device}}" },
-        { "expr": "rate(node_network_transmit_bytes_total{instance=\"$instance\",device!~\"lo\"}[5m])", "legendFormat": "tx {{device}}" }
+        {
+          "expr": "rate(node_network_receive_bytes_total{instance=\"$instance\",device!~\"lo\"}[5m])",
+          "legendFormat": "rx {{device}}"
+        },
+        {
+          "expr": "rate(node_network_transmit_bytes_total{instance=\"$instance\",device!~\"lo\"}[5m])",
+          "legendFormat": "tx {{device}}"
+        }
       ],
-      "fieldConfig": { "defaults": { "unit": "Bps" } }
+      "fieldConfig": {
+        "defaults": {
+          "unit": "Bps"
+        }
+      }
     },
     {
       "id": 8,
       "type": "timeseries",
-      "title": "CPU temperature (°C)",
-      "gridPos": { "h": 8, "w": 8, "x": 24, "y": 7 },
-      "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
-      "targets": [{ "expr": "node_cpu_temp_celsius{instance=\"$instance\"}", "legendFormat": "{{package}}" }],
-      "fieldConfig": { "defaults": { "unit": "celsius" } }
+      "title": "CPU temperature (\u00b0C)",
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 8,
+        "y": 15
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-homelab"
+      },
+      "targets": [
+        {
+          "expr": "node_cpu_temp_celsius{instance=\"$instance\"}",
+          "legendFormat": "{{package}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "celsius"
+        }
+      }
     },
     {
       "id": 9,
       "type": "timeseries",
       "title": "Context switch / interrupt pressure",
-      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 15 },
-      "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 16,
+        "y": 15
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-homelab"
+      },
       "targets": [
-        { "expr": "rate(node_context_switches_total{instance=\"$instance\"}[5m])", "legendFormat": "ctx-switch/s" },
-        { "expr": "rate(node_intr_total{instance=\"$instance\"}[5m])", "legendFormat": "intr/s" }
+        {
+          "expr": "rate(node_context_switches_total{instance=\"$instance\"}[5m])",
+          "legendFormat": "ctx-switch/s"
+        },
+        {
+          "expr": "rate(node_intr_total{instance=\"$instance\"}[5m])",
+          "legendFormat": "intr/s"
+        }
       ]
     }
   ]

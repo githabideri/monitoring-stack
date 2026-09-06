@@ -2,7 +2,7 @@
   "title": "Storage / ZFS",
   "uid": "homelab-storage-zfs",
   "schemaVersion": 39,
-  "version": 1,
+  "version": 2,
   "editable": true,
   "refresh": "1m",
   "time": {
@@ -23,7 +23,7 @@
           "type": "prometheus",
           "uid": "prometheus-homelab"
         },
-        "query": "label_values(zfs_arc_size, instance)",
+        "query": "label_values(node_zfs_arc_size, instance)",
         "sort": "alpha",
         "includeAll": true,
         "multi": true

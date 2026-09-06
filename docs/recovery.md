@@ -11,6 +11,14 @@ What is what:
 
 ## TSDB recovery (loss of the local dataset)
 
+The nightly snapshot is a **static copy of the TSDB** and can be used as
+a data directory directly. On Prometheus 3.x a snapshot dir contains one
+or more block dirs (`<name>/<block-ULID>/{meta.json,index,chunks/}`) —
+no separate replay step is needed: start Prometheus with
+`--storage.tsdb.path` pointing at the snapshot dir. This procedure was
+verified on 3.14 (a scratch instance booted on a copied snapshot served
+the same values as the live instance for the covered period).
+
 1. Recreate the dataset and mountpoint:
    ```bash
    zfs create -o quota=20G <pool>/monitoring-prometheus
@@ -20,7 +28,11 @@ What is what:
    ```bash
    rsync -a <nas-mount>/snapshots/<newest>/ /var/lib/prometheus/
    ```
-3. Restart the Prometheus service; it opens the copied blocks.
+   (equivalently, for a one-off test: run a scratch
+   `prometheus --storage.tsdb.path=<the-snapshot-dir>` alongside; do
+   **not** point the production unit at a directory the backup script
+   still prunes.)
+3. Start the Prometheus service; it opens the copied blocks.
    Expect a compaction burst on first start.
 4. Verify: `prometheus_tsdb_storage_blocks_bytes` (3.x — see
    [retention.md](retention.md) for the full sum), `/api/v1/status/config`,
@@ -41,11 +53,14 @@ The gap in history = time since the last successful nightly copy.
 ## Backup pipeline failure
 
 - A failed TSDB copy leaves the live TSDB untouched (copies happen to
-  the destination; pruning happens in the destination).
+  the destination; the local snapshot is deleted only after the copy
+  verifies; failed copies are removed).
 - If the NAS is down at the scheduled window, the run fails in the
-  journal; the next window retries, and the snapshot taken at that time
-  simply becomes the newest backup. History older than that remains in
-  previously copied snapshots.
+  journal and is **not** auto-retried (one attempt per day — see the
+  backup README's retry model). The failed run's local snapshot survives
+  until the next run; rerun manually inside the window (`systemctl start
+  tsdb-backup.service`) if you want the backup sooner. The *system*
+  being down at 23:30 is caught up automatically via `Persistent=true`.
 
 ## What this stack does NOT recover
 

@@ -67,23 +67,49 @@ homelab:backup_verified == 0
 # GPU utilisation (0..100)
 homelab:gpu_utilization
 
-# KV-cache usage per model (0..1)
+# KV-cache usage per model (0..1) — vLLM-only
 homelab:llm_kv_used:ratio
 
-# Queue pressure
+# Queue pressure — both engines (vLLM waiting / llama.cpp deferred)
 homelab:llm_queue:sum
+
+# Prefix/prompt-cache hit ratio (0..1) — both engines
+homelab:llm_prefix_cache_hit:ratio
 
 # Generation / prompt throughput (tok/s)
 homelab:llm_tokens_per_second
 hub_model_prompt_tokens_per_second
 
-# Latency p95 (seconds)
+# Latency p95 (seconds) — vLLM-only
 hub_model_ttft_p95_seconds
 hub_model_tpot_p95_seconds
 
-# Preemptions in the last hour
-increase(hub_model_preemptions_window[1h])
+# Preemptions in the last hour — vLLM-only, cumulative counter
+# (NOT the rolling-window gauge hub_model_preemptions_window — that one
+# must not be fed to increase())
+increase(hub_model_preemptions_total[1h])
 ```
+
+### Hub missing-sample semantics
+
+The hub (llmlab) omits a metric entirely when it has no data for it:
+
+- **series absent from the query result** → no data: the model is not
+  loaded, the engine is idle, or the metric does not exist for that
+  engine (e.g. `hub_model_kv_cache_used*` never appears for llama.cpp-
+  served models). Treat absence as *unknown/not applicable*, never as
+  zero.
+- **series present with value `0`** → a measured zero (e.g. queue empty,
+  no preemptions). This is a real data point.
+- **JSON API**: an absent series simply does not appear in
+  `data.result`; a zero appears as `"value": [..., "0"]`. Do not write
+  tooling that coalesces missing-with-zero.
+- Engine-specific metric sets: vLLM exports `requests_waiting/running`,
+  `kv_cache_used`, `preemptions_*`, `ttft/tpot/e2e/queue` percentiles,
+  `finish_*`, `prefix_cache_hit`, `engine_asleep`; llama.cpp exports
+  `requests_processing/deferred`, `busy_slots`, `prompt_cache_hit`;
+  both export `loaded`, `tokens_per_second`, `prompt_tokens_per_second`,
+  `spec_acceptance`.
 
 ## Before / after service-change comparison
 
@@ -125,6 +151,8 @@ prometheus_target_scrape_pool_targets
 - Prefer the recording rules; they are stable and pre-averaged.
 - Filter by `instance` / `server` / `model` labels — see
   [labeling.md](labeling.md).
-- `NaN` in a hub rate metric means "no data / idle", not an error.
+- Hub metrics: *absent* means no data (idle / not applicable to that
+  engine), an explicit `0` means a measured zero — see the semantics
+  note in the GPU/LLM section above.
 - Rate metrics re-baseline on counter resets; do not compute deltas
   across restarts yourself.

@@ -2,7 +2,7 @@
   "title": "GPU / LLM",
   "uid": "homelab-gpu-llm",
   "schemaVersion": 39,
-  "version": 1,
+  "version": 2,
   "editable": true,
   "refresh": "30s",
   "time": { "from": "now-24h", "to": "now" },
@@ -26,10 +26,11 @@
       "id": 1,
       "type": "timeseries",
       "title": "GPU utilisation (%)",
+      "description": "Recording rule: homelab:gpu_utilization",
       "gridPos": { "h": 7, "w": 12, "x": 0, "y": 0 },
       "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
-      "targets": [{ "expr": "hub_gpu_utilization_pct{server=~\"$server\"}", "legendFormat": "{{server}} / {{gpu}}" }],
-      "fieldConfig": { "defaults": { "unit": "percent" } }
+      "targets": [{ "expr": "homelab:gpu_utilization{server=~\"$server\"}", "legendFormat": "{{server}} / {{gpu}}" }],
+      "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100 } }
     },
     {
       "id": 2,
@@ -41,78 +42,105 @@
         { "expr": "hub_gpu_memory_used_mib{server=~\"$server\"}", "legendFormat": "used {{server}} / {{gpu}}" },
         { "expr": "hub_gpu_memory_total_mib{server=~\"$server\"}", "legendFormat": "total {{server}} / {{gpu}}" }
       ],
-      "fieldConfig": { "defaults": { "unit": "Mbytes" } }
+      "fieldConfig": { "defaults": { "unit": "Mbytes", "min": 0 } }
     },
     {
       "id": 3,
       "type": "timeseries",
-      "title": "GPU temperature / power",
+      "title": "GPU temperature (°C)",
+      "description": "One unit per panel: temperature is celsius, power has its own panel.",
       "gridPos": { "h": 7, "w": 12, "x": 0, "y": 7 },
       "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
       "targets": [
-        { "expr": "hub_gpu_temp_c{server=~\"$server\"}", "legendFormat": "temp {{server}} / {{gpu}}", "unit": "celsius" },
-        { "expr": "hub_gpu_power_w{server=~\"$server\"}", "legendFormat": "power {{server}} / {{gpu}}", "unit": "watt" }
-      ]
+        { "expr": "hub_gpu_temp_c{server=~\"$server\"}", "legendFormat": "{{server}} / {{gpu}}" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "celsius", "min": 0 } }
     },
     {
       "id": 4,
       "type": "timeseries",
-      "title": "Generation throughput (tok/s)",
+      "title": "GPU power (W)",
       "gridPos": { "h": 7, "w": 12, "x": 12, "y": 7 },
       "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
-      "targets": [{ "expr": "hub_model_tokens_per_second{server=~\"$server\"}", "legendFormat": "{{server}} / {{model}}" }]
+      "targets": [
+        { "expr": "hub_gpu_power_w{server=~\"$server\"}", "legendFormat": "{{server}} / {{gpu}}" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "watt", "min": 0 } }
     },
     {
       "id": 5,
       "type": "timeseries",
-      "title": "Prompt processing throughput (tok/s)",
+      "title": "Generation throughput (tok/s)",
+      "description": "Recording rule: homelab:llm_tokens_per_second",
       "gridPos": { "h": 7, "w": 12, "x": 0, "y": 14 },
       "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
-      "targets": [{ "expr": "hub_model_prompt_tokens_per_second{server=~\"$server\"}", "legendFormat": "{{server}} / {{model}}" }]
+      "targets": [{ "expr": "homelab:llm_tokens_per_second{server=~\"$server\"}", "legendFormat": "{{server}} / {{model}}" }],
+      "fieldConfig": { "defaults": { "min": 0 } }
     },
     {
       "id": 6,
       "type": "timeseries",
-      "title": "TTFT / TPOT (s, p95)",
+      "title": "Prompt processing (tok/s)",
       "gridPos": { "h": 7, "w": 12, "x": 12, "y": 14 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
+      "targets": [{ "expr": "hub_model_prompt_tokens_per_second{server=~\"$server\"}", "legendFormat": "{{server}} / {{model}}" }],
+      "fieldConfig": { "defaults": { "min": 0 } }
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "TTFT / TPOT p95 (s)",
+      "description": "vLLM-only metrics: absent when the model is served by llama.cpp (missing series, not zero).",
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 21 },
       "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
       "targets": [
         { "expr": "hub_model_ttft_p95_seconds{server=~\"$server\"}", "legendFormat": "ttft {{server}} / {{model}}" },
         { "expr": "hub_model_tpot_p95_seconds{server=~\"$server\"}", "legendFormat": "tpot {{server}} / {{model}}" }
       ],
-      "fieldConfig": { "defaults": { "unit": "s" } }
-    },
-    {
-      "id": 7,
-      "type": "timeseries",
-      "title": "Queue & running requests",
-      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 21 },
-      "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
-      "targets": [
-        { "expr": "hub_model_requests_waiting{server=~\"$server\"}", "legendFormat": "waiting {{server}} / {{model}}" },
-        { "expr": "hub_model_requests_running{server=~\"$server\"}", "legendFormat": "running {{server}} / {{model}}" }
-      ]
+      "fieldConfig": { "defaults": { "unit": "s", "min": 0 } }
     },
     {
       "id": 8,
       "type": "timeseries",
-      "title": "KV cache used / preemptions",
+      "title": "Queue & running requests",
+      "description": "Both engines via or: vLLM (waiting/running) or llama.cpp (deferred/processing).",
       "gridPos": { "h": 7, "w": 12, "x": 12, "y": 21 },
       "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
       "targets": [
-        { "expr": "hub_model_kv_cache_used{server=~\"$server\"}", "legendFormat": "kv {{server}} / {{model}}" },
-        { "expr": "increase(hub_model_preemptions_window{server=~\"$server\"}[1h])", "legendFormat": "preempt {{server}} / {{model}}" }
+        { "expr": "(hub_model_requests_waiting or hub_model_requests_deferred){server=~\"$server\"}", "legendFormat": "queue {{server}} / {{model}}" },
+        { "expr": "(hub_model_requests_running or hub_model_requests_processing){server=~\"$server\"}", "legendFormat": "running {{server}} / {{model}}" }
       ],
       "fieldConfig": { "defaults": { "min": 0 } }
     },
     {
       "id": 9,
       "type": "timeseries",
-      "title": "Prefix-cache hit ratio / spec acceptance",
-      "gridPos": { "h": 6, "w": 12, "x": 24, "y": 7 },
+      "title": "KV cache used (0..1)",
+      "description": "vLLM-only metric.",
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 28 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
+      "targets": [{ "expr": "hub_model_kv_cache_used{server=~\"$server\"}", "legendFormat": "{{server}} / {{model}}" }],
+      "fieldConfig": { "defaults": { "unit": "percentdecimal", "min": 0, "max": 1 } }
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "KV-cache preemptions (1h count)",
+      "description": "vLLM-only counter; per-hour increase. (The hub's rolling-window gauge is not used with increase().)",
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 28 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
+      "targets": [{ "expr": "increase(hub_model_preemptions_total{server=~\"$server\"}[1h])", "legendFormat": "{{server}} / {{model}}" }],
+      "fieldConfig": { "defaults": { "min": 0 } }
+    },
+    {
+      "id": 11,
+      "type": "timeseries",
+      "title": "Cache hit / speculative acceptance (0..1)",
+      "description": "Both engines: vLLM prefix_cache_hit or llama.cpp prompt_cache_hit; spec acceptance (llama.cpp).",
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 35 },
       "datasource": { "type": "prometheus", "uid": "prometheus-homelab" },
       "targets": [
-        { "expr": "hub_model_prefix_cache_hit{server=~\"$server\"}", "legendFormat": "prefix {{server}} / {{model}}" },
+        { "expr": "(hub_model_prefix_cache_hit or hub_model_prompt_cache_hit){server=~\"$server\"}", "legendFormat": "cache {{server}} / {{model}}" },
         { "expr": "hub_model_spec_acceptance{server=~\"$server\"}", "legendFormat": "spec {{server}} / {{model}}" }
       ],
       "fieldConfig": { "defaults": { "unit": "percentdecimal", "min": 0, "max": 1 } }

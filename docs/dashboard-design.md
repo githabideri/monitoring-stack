@@ -87,16 +87,24 @@ logic). See `docs/metrics.yml` for the catalog.
 | `prometheus-self` | Is monitoring itself trustworthy? |
 
 Each file carries `--homelab-dashboard: <name>` in its description for
-idempotent import; `scripts/verify-monitoring.py` re-imports every file
-and checks it renders.
+idempotent import. `scripts/verify-monitoring.py` validates every file
+and its PromQL against the live Prometheus, then checks that the expected
+UIDs exist in the Grafana store after provisioning — it never writes to
+Grafana; deployment (copy + provision) stays with Ansible.
 
-## Verification (no exceptions)
+## Verification
 
 A dashboard change is not done until:
 
-1. Every target in the file returns **actual series** for the current
-   fleet (a query returning empty is a defect, not "no data yet") —
-   verified against the live Prometheus, not by reading the JSON.
+1. Every target in the file that is **not activity-gated** returns
+   actual series for the current fleet (a query returning empty is a
+   defect, not "no data yet") — verified against the live Prometheus,
+   not by reading the JSON. **Activity-gated metrics** (LLM
+   throughput/latency/preemptions, ZFS ARC hit — see the zero/absent
+   column in `docs/metrics.yml` and `TRANSIENT_RULES` in
+   `scripts/verify-monitoring.py`) may legitimately return no series
+   while the system is idle; the verifier reports those as info, not
+   failure.
 2. Units are set on every numeric panel.
 3. The file is importable by the provisioning path
    (`scripts/verify-monitoring.py --dashboards`).

@@ -32,9 +32,14 @@ allow_org_create = false
 [analytics]
 reporting_enabled = false
 # No update pings, no welcome screen: this is an appliance, not a learning
-# environment. Home after login = the provisioned fleet overview
-# (grafana_default_home_dashboard); this replaces Grafana's default
-# "Welcome" page for all users.
+# environment. (The home dashboard itself is set in [dashboards] below —
+# Grafana only reads default_home_dashboard_path from that section.)
 check_for_updates = false
 check_for_plugin_updates = false
+
+[dashboards]
+# Home after login = the provisioned fleet overview
+# (grafana_default_home_dashboard); this replaces Grafana's default
+# "Welcome" page for all users. Grafana reads the uid from the file and
+# redirects / to it; a per-user home preference (set in the UI) overrides.
 default_home_dashboard_path = {{ grafana_home }}/dashboards/{{ grafana_default_home_dashboard }}

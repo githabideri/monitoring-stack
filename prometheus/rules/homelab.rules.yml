@@ -15,27 +15,44 @@ groups:
   - name: homelab.hosts
     interval: 1m
     rules:
-      # CPU utilisation, 5-minute smoothed (0..100)
+      # CPU utilisation, 5-minute smoothed (0..100).
+      # rate() over the idle counter = mean idle rate across the window;
+      # avg_over_time() on the raw counter would be wrong (monotonic, unbounded).
       - record: homelab:cpu_util:avg5m
-        expr: 100 - (avg_over_time(node_cpu_seconds_total{mode="idle"}[5m]) * 100)
+        expr: 100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)
 
       # Load per core (1.0 == one core fully loaded)
       - record: homelab:load_per_core
         expr: node_load5 / count without (cpu, mode) (node_cpu_seconds_total{mode="idle"})
 
-      # Memory used ratio (0..1)
+      # Memory used ratio (0..1). (If the meminfo collector is absent the
+      # rule yields no series for that host — the down-host signal is
+      # up{job="node-exporter"}, not a faked 0 here.)
       - record: homelab:mem_used:ratio
         expr: 1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)
 
-      # Swap used ratio (0..1); 0 on hosts without swap
+      # Swap used ratio (0..1); 0 on hosts without swap. node_exporter omits
+      # both Swap metrics entirely when /proc/meminfo has no SwapTotal, which
+      # would otherwise yield NaN. The anchor (MemTotal * 0) is a per-host 0
+      # carrying the instance labels; `or` substitutes it only where a Swap
+      # metric is absent. Hosts without swap then get an explicit 0
+      # ("no swap pressure") instead of a NaN or a vanished series.
       - record: homelab:swap_used:ratio
-        expr: 1 - (node_memory_SwapFree_bytes / node_memory_SwapTotal_bytes)
+        expr: >-
+          (1 - ((node_memory_SwapFree_bytes or (node_memory_MemTotal_bytes * 0))
+                / clamp_min(node_memory_SwapTotal_bytes or (node_memory_MemTotal_bytes * 0), 1))
+                * ((node_memory_SwapTotal_bytes or (node_memory_MemTotal_bytes * 0)) > 0))
+          or (((node_memory_SwapTotal_bytes or (node_memory_MemTotal_bytes * 0)) == 0) * 0)
 
-      # Filesystem used ratio (0..1) on real filesystems
+      # Filesystem used ratio (0..1) on real filesystems. The `and/or` guard
+      # drops zero-size pseudo-filesystems (e.g. fuse.lxcfs, size=0), which
+      # would otherwise produce NaN; they report 0 instead.
       - record: homelab:fs_used:ratio
         expr: >-
-          1 - (node_filesystem_avail_bytes{fstype!="tmpfs",fstype!~"overlay|squashfs"}
-               / node_filesystem_size_bytes{fstype!="tmpfs",fstype!~"overlay|squashfs"})
+          (1 - (node_filesystem_avail_bytes{fstype!="tmpfs",fstype!~"overlay|squashfs"}
+                / node_filesystem_size_bytes{fstype!="tmpfs",fstype!~"overlay|squashfs"}))
+          and (node_filesystem_size_bytes{fstype!="tmpfs",fstype!~"overlay|squashfs"} > 0)
+          or (node_filesystem_size_bytes{fstype!="tmpfs",fstype!~"overlay|squashfs"} == 0) * 0
 
       # Filesystem free bytes
       - record: homelab:fs_free:bytes
@@ -49,11 +66,14 @@ groups:
       # NOTE: metric names are node_zfs_* (the zfs_exporter-style zfs_* never match),
       # and pool-level node_zpool_* do NOT exist on PVE's SPL (no /proc/spl/.../zpool_*/io)
       # — pool usage is covered by homelab:fs_used:ratio on the dataset filesystems.
+      # On an idle system both rates are 0: the ratio is NaN, so the `and` drops it
+      # and the `or` branch emits an explicit 0 ("no traffic, no signal").
       - record: homelab:zfs_arc_hit:ratio
         expr: >-
-          rate(node_zfs_arc_hits[5m])
-          /
-          (rate(node_zfs_arc_hits[5m]) + rate(node_zfs_arc_misses[5m]) or vector(1))
+          (rate(node_zfs_arc_hits[5m])
+           / (rate(node_zfs_arc_hits[5m]) + rate(node_zfs_arc_misses[5m])))
+          and (rate(node_zfs_arc_hits[5m]) + rate(node_zfs_arc_misses[5m]) > 0)
+          or (rate(node_zfs_arc_hits[5m]) + rate(node_zfs_arc_misses[5m]) == 0) * 0
 
   - name: homelab.pbs
     rules:
@@ -76,9 +96,11 @@ groups:
       - record: homelab:llm_kv_used:ratio
         expr: avg by (server, model) (hub_model_kv_cache_used)
 
-      # Queue pressure: waiting requests per model
+      # Queue pressure: waiting requests per model. Covers both engines via
+      # `or` (vLLM: requests_waiting, llama.cpp: requests_deferred) so the name
+      # stays stable no matter which engine serves a model.
       - record: homelab:llm_queue:sum
-        expr: sum by (server, model) (hub_model_requests_waiting)
+        expr: sum by (server, model) (hub_model_requests_waiting or hub_model_requests_deferred)
 
       # Generation throughput per model (tokens/s)
       - record: homelab:llm_tokens_per_second
@@ -88,9 +110,10 @@ groups:
       - record: homelab:gpu_utilization
         expr: avg by (server, gpu) (hub_gpu_utilization_pct)
 
-      # Prefix-cache hit ratio (0..1)
+      # Prefix/prompt-cache hit ratio (0..1). vLLM: prefix_cache_hit, llama.cpp:
+      # prompt_cache_hit — `or` keeps one stable name across engines.
       - record: homelab:llm_prefix_cache_hit:ratio
-        expr: avg by (server, model) (hub_model_prefix_cache_hit)
+        expr: avg by (server, model) (hub_model_prefix_cache_hit or hub_model_prompt_cache_hit)
 
   - name: homelab.services
     rules:

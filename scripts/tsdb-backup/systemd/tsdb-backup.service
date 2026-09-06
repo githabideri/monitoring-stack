@@ -16,6 +16,8 @@ Environment=TSDB_DIR=/mnt/pve/rpool/data/monitoring-prometheus
 Environment=DEST=/mnt/monitoring-backup
 Environment=KEEP=14
 ExecStart=/usr/local/bin/tsdb-backup.sh
-# A missed window (NAS down) is visible in the journal and the timer's
-# Persistent=true catches up on the next availability window.
+# A missed *window* (NAS down) fails loudly in the journal; there is no
+# retry loop — the next attempt is tomorrow's 23:30, and a failed run keeps
+# its local snapshot for that run (see README "Retry model").
+# Persistent=true only covers the *system* being down at 23:30 (catch-up run).
 TimeoutStartSec=30min

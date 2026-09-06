@@ -146,12 +146,22 @@ raw_pve:
     kind: gauge
   pve_network_receive_bytes_total / pve_network_transmit_bytes_total:
     kind: counter
-  pve_uptime:
+  pve_uptime_seconds:
     kind: gauge
     unit: s
   pve_not_backed_up_info / pve_not_backed_up_total:
     kind: info
     note: "guests with no live-backup job"
+  pve_ha_state / pve_lock_state / pve_onboot_status:
+    kind: gauge
+    note: "HA state, lock (0 = none), on-boot (1 = autostart)"
+  pve_subscription_status / pve_subscription_info:
+    kind: gauge / info
+  pve_version_info:
+    kind: info
+    note: "PVE version per node"
+  pve_storage_info / pve_storage_shared:
+    kind: info / gauge
 
 raw_pbs:
   # Central pbs-exporter (natrontech v2.1.0) against PBS 4.2.5 on wpbs.
@@ -265,25 +275,31 @@ raw_vllm:
     kind: gauge
 
 raw_prometheus:
-  # Prometheus self-metrics (job=prometheus-self).
-  prometheus_tsdb_storage_bytes:
+  # Prometheus 3.14 self-metrics (job=prometheus-self). Note: v3 renamed
+  # the 2.x names — there is NO prometheus_tsdb_storage_bytes (use
+  # storage_blocks_bytes + head_chunks_storage_size_bytes + wal) and NO
+  # prometheus_local_storage_data_total_series (use tsdb_head_series).
+  prometheus_tsdb_storage_blocks_bytes / prometheus_tsdb_head_chunks_storage_size_bytes:
     kind: gauge
-    note: "TSDB size on disk (the 16 GiB retention guard is against this)"
-  prometheus_tsdb_retention_seconds / prometheus_local_storage_retention_min_time:
+    unit: bytes
+    note: "blocks on disk + in-memory head. Sum = current TSDB footprint (16 GiB retention guard)."
+  prometheus_tsdb_wal_storage_size_bytes:
     kind: gauge
-  prometheus_local_storage_data_total_series:
+    unit: bytes
+  prometheus_tsdb_retention_limit_bytes / prometheus_tsdb_retention_limit_seconds:
     kind: gauge
-  prometheus_local_storage_memory_chunk_bytes:
+  prometheus_tsdb_head_series / prometheus_tsdb_blocks_loaded:
     kind: gauge
-  prometheus_target_scrape_pool_targets / prometheus_sd_ragex_targets:
+  prometheus_target_scrape_pool_targets:
     kind: gauge
+    labels: [scrape_job, health]
+  prometheus_target_scrape_duration_seconds:
+    kind: summary
   prometheus_http_requests_total:
     kind: counter
     labels: [code, handler]
   prometheus_rule_evaluation_failures_total / prometheus_rule_evaluation_duration_seconds:
     kind: counter / summary
-  prometheus_notifications_total / prometheus_notifications_sent_total:
-    kind: counter
 
 # ------------------------------------------------------- recording rules
 # Verified live 2026-09-06. Rules are the machine-facing layer: agents

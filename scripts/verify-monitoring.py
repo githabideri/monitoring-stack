@@ -67,6 +67,7 @@ import json
 import os
 import re
 import sys
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -86,7 +87,6 @@ def http_json(url, timeout=30, headers=None, data=None, retries=3):
             # the control node reaches the Prometheus LXC over the LAN and
             # occasional connection resets happen under burst load; back off
             # and retry before calling it a failure.
-            import time
             time.sleep(1.5 * (attempt + 1))
     raise RuntimeError(f"{url} failed after {retries} attempts: {last}")
 
@@ -200,6 +200,23 @@ def grafana_api(grafana, cookie, path, method="GET", body=None):
         return e.code, json.loads(e.read() or "{}")
 
 
+def datasource_uids(d):
+    """All datasource uids referenced anywhere in a dashboard file:
+    file-level, panel-level, target-level — including nested rows."""
+    wanted = set()
+    if isinstance(d.get("datasource"), dict) and d["datasource"].get("uid"):
+        wanted.add(d["datasource"]["uid"])
+    for p in d.get("panels", []):
+        if isinstance(p.get("datasource"), dict) and p["datasource"].get("uid"):
+            wanted.add(p["datasource"]["uid"])
+        if p.get("type") == "row":
+            wanted |= datasource_uids(p)
+        for t in p.get("targets", []):
+            if isinstance(t.get("datasource"), dict) and t["datasource"].get("uid"):
+                wanted.add(t["datasource"]["uid"])
+    return wanted
+
+
 def check_datasources(grafana, cookie, rep, dashboards):
     """Every datasource uid referenced by a dashboard file must exist."""
     try:
@@ -212,10 +229,7 @@ def check_datasources(grafana, cookie, rep, dashboards):
         return
     have = {x["uid"] for x in (d.get("datasources", []) if isinstance(d, dict) else d)}
     for name, d in dashboards:
-        wanted = {t.get("datasource", {}).get("uid")
-                  for p in d.get("panels", []) for t in p.get("targets", [])}
-        wanted.discard(None)
-        missing = wanted - have
+        missing = datasource_uids(d) - have
         if missing:
             rep.fail(f"{name}: references missing datasource(s): {sorted(missing)}")
 
@@ -253,7 +267,10 @@ def check_home(grafana, cookie, rep, expected_uid, admin_user):
                      f"(check grafana.ini [dashboards] default_home_dashboard_path)")
     finally:
         if new_id:
-            grafana_api(grafana, cookie, f"/api/admin/users/{new_id}", "DELETE")
+            status, _ = grafana_api(grafana, cookie, f"/api/admin/users/{new_id}", "DELETE")
+            if status != 200:
+                rep.warn(f"could not delete throwaway user {login!r} (got {status}) — "
+                         f"remove it via the Grafana UI / admin API")
 
 
 def check_grafana(grafana, rep, uids_wanted, expected_home_uid, dashboards):

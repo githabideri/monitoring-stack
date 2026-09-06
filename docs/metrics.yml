@@ -1,7 +1,10 @@
 # Metrics Catalog — the contract between exporters, recording rules, and
-# dashboards/agents. Every entry below was verified against the live
-# Audited against the live Prometheus on 2026-09-06 — if a listed metric is
-# absent there, the exporter regressed.
+# dashboards/agents. Metric names and label shapes were audited against
+# the live Prometheus on 2026-09-06. Absence of a listed metric is a
+# regression ONLY where the entry's semantics say it should be present
+# continuously (up, node_* identity metrics, exporter health gauges);
+# activity-gated and engine/feature-specific metrics are legitimately
+# absent — each such entry says so in its zero/absent note.
 #
 # Kinds: gauge (point-in-time), counter (monotonic — always use
 # rate/irate/delta), info (presence/label carrier, value usually 1).

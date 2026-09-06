@@ -106,8 +106,9 @@ A dashboard change is not done until:
    while the system is idle; the verifier reports those as info, not
    failure.
 2. Units are set on every numeric panel.
-3. The file is importable by the provisioning path
-   (`scripts/verify-monitoring.py --dashboards`).
+3. After Ansible provisioning, the expected UID exists in the Grafana
+   store and all panel expressions validate (the verifier never imports
+   anything — deployment is Ansible's job).
 4. Committed in the public repo; the private repo's monitoring service
    doc points at it.
 

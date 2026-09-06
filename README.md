@@ -59,10 +59,11 @@ Grafana LXC     <------ humans (dashboards)
   `docs/agent-queries.md`. Agents query Prometheus directly; they do not
   scrape Grafana.
 - **Verification is a first-class artifact**: `scripts/verify-monitoring.py`
-  checks targets, rule health, that every dashboard expression returns
-  live series, that the dashboards are in the Grafana store, and that the
-  home dashboard is actually served — run it after every change; a PASS is
-  the bar for calling the stack healthy.
+  checks targets, rule health, validates every dashboard expression
+  against live Prometheus (including the documented no-data semantics
+  for activity-gated metrics), that the dashboards are in the Grafana
+  store, and that the home dashboard is actually served — run it after
+  every change; a PASS is the bar for calling the stack healthy.
 - **pve-exporter** and **pbs-exporter** run *centrally inside the
   Prometheus LXC* and query PVE nodes / the PBS API over the network.
   They need read-only API credentials (e.g. a PVE `PVEAuditor` user per

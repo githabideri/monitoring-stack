@@ -40,6 +40,8 @@ check_for_plugin_updates = false
 [dashboards]
 # Home after login = the provisioned fleet overview
 # (grafana_default_home_dashboard); this replaces Grafana's default
-# "Welcome" page for all users. Grafana reads the uid from the file and
-# redirects / to it; a per-user home preference (set in the UI) overrides.
+# "Welcome" page. This is a RENDER path, not a redirect: a user without a
+# stored home preference gets this file's contents at GET
+# /api/dashboards/home; a per-user home preference (set in the UI) overrides.
+# NOTE: 11.6 only parses this key from the [dashboards] section.
 default_home_dashboard_path = {{ grafana_home }}/dashboards/{{ grafana_default_home_dashboard }}

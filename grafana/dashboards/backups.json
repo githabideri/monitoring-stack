@@ -2,7 +2,7 @@
   "annotations": {
     "list": []
   },
-  "description": "--homelab-dashboard: backups. Question: are we protected? PBS (wpbs) guest backup state \u2014 how old, verified or not, never-backed-up, datastore capacity \u2014 plus the PVE live-backup job coverage.",
+  "description": "--homelab-dashboard: backups. Question: are we protected? PBS (Proxmox Backup Server) guest backup state \u2014 how old, verified or not, never-backed-up, datastore capacity \u2014 plus the PVE live-backup job coverage.",
   "editable": true,
   "graphTooltip": 1,
   "links": [
@@ -31,7 +31,7 @@
         "type": "prometheus",
         "uid": "prometheus-homelab"
       },
-      "description": "pbs-exporter reachability against PBS (wpbs). 0 = no backup data at all \u2014 everything else on this dashboard is stale.",
+      "description": "pbs-exporter reachability against the Proxmox Backup Server. 0 = no backup data at all \u2014 everything else on this dashboard is stale.",
       "fieldConfig": {
         "defaults": [
           {

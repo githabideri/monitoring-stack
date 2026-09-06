@@ -1,6 +1,6 @@
 # Metrics Catalog — the contract between exporters, recording rules, and
 # dashboards/agents. Every entry below was verified against the live
-# Prometheus (CT 388, locmox) on 2026-09-06 — if a listed metric is
+# Audited against the live Prometheus on 2026-09-06 — if a listed metric is
 # absent there, the exporter regressed.
 #
 # Kinds: gauge (point-in-time), counter (monotonic — always use
@@ -11,8 +11,8 @@
 # must never draw an absent series as a flat zero line.
 
 meta:
-  prometheus: CT 388 (192.168.0.88), http://PROM:9090, no auth (LAN/TS only)
-  grafana: CT 389 (192.168.0.89), https://grafana-ui.home.macl.at, datasource uid prometheus-homelab
+  prometheus: the Prometheus LXC, http://PROM:9090, no auth (LAN/TS only)
+  grafana: the Grafana LXC (reverse-proxied, see configs/), datasource uid prometheus-homelab
   recording_rules: prometheus/rules/homelab.rules.yml (groups: homelab.hosts, homelab.storage, homelab.pbs, homelab.llm, homelab.services)
   dashboard_contract: docs/dashboard-design.md
 
@@ -164,7 +164,7 @@ raw_pve:
     kind: info / gauge
 
 raw_pbs:
-  # Central pbs-exporter (natrontech v2.1.0) against PBS 4.2.5 on wpbs.
+  # Central pbs-exporter (natrontech) against PBS 4.x on the Proxmox Backup Server.
   pbs_up:
     kind: gauge
   pbs_size / pbs_used / pbs_available:
@@ -177,7 +177,7 @@ raw_pbs:
   pbs_snapshot_vm_count:
     kind: gauge
     labels: [datastore, namespace, vm_id, vm_name]
-    note: "one series per VM ever backed up (111 on 2026-09-06). namespace = source host (locmox, onas, fernprox, fpx0, fpx2, wgpx15, pve, wpbs)."
+    note: "one series per VM ever backed up (111 on 2026-09-06). namespace = source host name (one per backed-up host)."
   pbs_snapshot_vm_last_timestamp:
     kind: gauge
     unit: unix_seconds
@@ -254,7 +254,7 @@ raw_llm:
     unit: MiB
 
 raw_vllm:
-  # vLLM's own /metrics (192.168.0.24:8080), scraped directly.
+  # vLLM's own /metrics (the inference server's :8080), scraped directly.
   # Instance-labeled only (no server/model) — joins with hub data are by
   # human knowledge, not by label.
   vllm:num_requests_waiting / vllm:num_requests_running:

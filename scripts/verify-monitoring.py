@@ -301,8 +301,10 @@ def check_backup(prom, rep):
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--prometheus", default="http://192.168.0.88:9090")
-    ap.add_argument("--grafana", default="http://192.168.0.89:3000")
+    ap.add_argument("--prometheus", default="http://127.0.0.1:9090",
+                    help="prometheus base URL (set to the Prometheus LXC from other hosts)")
+    ap.add_argument("--grafana", default="http://127.0.0.1:3000",
+                    help="grafana base URL (set to the Grafana LXC from other hosts)")
     ap.add_argument("--dashboards", default=None,
                     help="directory of dashboard JSON files (default: ../grafana/dashboards relative to this script)")
     ap.add_argument("--quiet", action="store_true")

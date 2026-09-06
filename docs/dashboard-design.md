@@ -29,8 +29,8 @@ model keeping up?" Bad: "CPU metrics", "Network", "Overview".
 
 ## The fleet
 
-Today the Prometheus in CT 388 (locmox) scrapes: one node_exporter host
-(locmox), the central pve-exporter (all PVE nodes), the central
+Today a Prometheus instance scrapes: one or more node_exporter hosts
+(hosts), the central pve-exporter (all PVE nodes), the central
 pbs-exporter (all PBS datastores), and the LLM endpoints (hub, vLLM,
 llama.cpp routers). More node_exporter hosts arrive over time.
 

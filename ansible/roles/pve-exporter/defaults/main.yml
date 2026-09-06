@@ -20,7 +20,7 @@ pve_exporter_config_dir: /etc/pve-exporter
 #
 # Example:
 #   pve_exporter_servers:
-#     locmox:
+#     <pve-host>:
 #       user: "monitoring@pve"
 #       token_name: "scraper"
 #       token_value: "<uuid>"

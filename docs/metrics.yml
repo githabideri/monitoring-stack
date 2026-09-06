@@ -1,0 +1,318 @@
+# Metrics Catalog — the contract between exporters, recording rules, and
+# dashboards/agents. Every entry below was verified against the live
+# Prometheus (CT 388, locmox) on 2026-09-06 — if a listed metric is
+# absent there, the exporter regressed.
+#
+# Kinds: gauge (point-in-time), counter (monotonic — always use
+# rate/irate/delta), info (presence/label carrier, value usually 1).
+#
+# "Zero/absent" semantics: zero = the value was measured and is zero.
+# absent = the series does not exist (no data, no conclusion). Dashboards
+# must never draw an absent series as a flat zero line.
+
+meta:
+  prometheus: CT 388 (192.168.0.88), http://PROM:9090, no auth (LAN/TS only)
+  grafana: CT 389 (192.168.0.89), https://grafana-ui.home.macl.at, datasource uid prometheus-homelab
+  recording_rules: prometheus/rules/homelab.rules.yml (groups: homelab.hosts, homelab.storage, homelab.pbs, homelab.llm, homelab.services)
+  dashboard_contract: docs/dashboard-design.md
+
+# ---------------------------------------------------------------- raw: hosts
+raw_hosts:
+  up:
+    kind: gauge
+    labels: [instance, job]
+    semantics: "1 = scraped OK, 0 = scrape failed. The one metric every panel can trust."
+  node_uname_info:
+    kind: info
+    labels: [system, release, version, machine]
+    note: "host identity (e.g. system='GNU/Linux', release='7.0.14-4-pve')"
+  node_os_info:
+    kind: info
+    labels: [family, id]
+  node_load1 / node_load5:
+    kind: gauge
+  node_cpu_seconds_total:
+    kind: counter
+    labels: [cpu, mode]
+    modes: [user, system, idle, iowait, irq, softirq, steal, nice]
+    note: "busy% = 100 - avg(rate(...{mode=\"idle\"}))*100"
+  node_pressure_cpu_waiting_seconds_total:
+    kind: counter
+    unit: s
+    note: "PSI waiting = processes delayed on the resource (real stalls); stalled = all parallel tasks blocked (worse). No irq metric in this build."
+  node_pressure_memory_waiting_seconds_total:
+    kind: counter
+  node_pressure_io_waiting_seconds_total:
+    kind: counter
+  node_memory_MemTotal_bytes:
+    kind: gauge
+  node_memory_MemAvailable_bytes:
+    kind: gauge
+    note: "mem_used = 1 - Available/Total (cgroup-style; correct on hosts where ZFS ARC shares the RAM)"
+  node_memory_SwapTotal_bytes:
+    kind: gauge
+    note: "Both Swap metrics are omitted entirely when no swap device exists — the rule handles that (explicit 0, never NaN)."
+  node_memory_SwapFree_bytes:
+    kind: gauge
+  node_filesystem_size_bytes:
+    kind: gauge
+    labels: [device, mountpoint, fstype]
+  node_filesystem_avail_bytes:
+    kind: gauge
+    note: "avail (not free): space available to unprivileged users."
+  node_filesystem_files / node_filesystem_files_free:
+    kind: gauge
+  node_disk_read_bytes_total / node_disk_written_bytes_total:
+    kind: counter
+    unit: bytes
+    labels: [device]
+  node_disk_io_time_seconds_total:
+    kind: counter
+    note: "IO busy% = rate(...[5m]) (0..1)"
+  node_disk_io_now:
+    kind: gauge
+  node_network_receive_bytes_total / node_network_transmit_bytes_total:
+    kind: counter
+    unit: bytes
+    labels: [device]
+  node_network_up:
+    kind: gauge
+
+raw_zfs:
+  node_zfs_arc_size:
+    kind: gauge
+    unit: bytes
+  node_zfs_arc_c:
+    kind: gauge
+    unit: bytes
+    note: "ARC LRU list size (what actually holds cache)"
+  node_zfs_arc_c_max / node_zfs_arc_c_min:
+    kind: gauge
+    unit: bytes
+  node_zfs_arc_hdr_size:
+    kind: gauge
+    unit: bytes
+  node_zfs_arc_hits / node_zfs_arc_misses:
+    kind: counter
+    note: "hit ratio over a window; gated by the recording rule"
+  node_zfs_arc_data_size / node_zfs_arc_metadata_size / node_zfs_arc_compressed_size:
+    kind: gauge
+    unit: bytes
+  node_zfs_arc_mfu_hits / node_zfs_arc_mru_hits:
+    kind: counter
+  # NOTE: this node_exporter build exports NO node_zfs_arc_read/write
+  # counters (verified 2026-09-06). Storage I/O bandwidth = node_disk_*.
+  # A flat-zero ARC I/O panel is a bug, not "no I/O".
+  node_zfs_zpool_dataset_nread / node_zfs_zpool_dataset_nwritten:
+    kind: counter
+    labels: [pool, dataset]
+    note: "per-dataset sector ops; rate() for IOPS"
+  node_zfs_zpool_dataset_reads / node_zfs_zpool_dataset_writes:
+    kind: counter
+  node_zfs_zpool_dataset_needcopy_bytes:
+    kind: gauge
+    unit: bytes
+    note: "ZFS copy-on-write pending"
+  node_zfs_zpool_state:
+    kind: gauge
+    note: "1 = ONLINE (0 OFFLINE, 2 DEGRADED, 3 FAULTED, ...)"
+
+raw_pve:
+  # Central pve-exporter 3.10 (venv in CT 388). DATA endpoint is /pve
+  # with query params module/target/cluster/node; /metrics is self only:
+  #   pve_last_scrape_error_message, pve_last_scrape_success_timestamp_seconds,
+  #   pve_request_errors_total, pve_scrapes_total, pve_scrape_duration_seconds
+  # (all carry module=... — watch this for collector health).
+  # PVE 9 pveum gotcha: API tokens default to privsep=1 (separate ACL set).
+  # Grant the token itself: pveum acl modify / -token 'user@pve!name' -role PVEAuditor.
+  pve_node_info:
+    kind: info
+    labels: [name, nodeid, role]
+  pve_guest_info:
+    kind: info
+    labels: [id, name, node, type, template]
+    id_format: "lxc/<vmid> or qemu/<vmid>"
+  pve_up:
+    kind: gauge
+  pve_cpu_usage_ratio:
+    kind: gauge
+    note: "0..1 of the guest's CPU allotment"
+  pve_cpu_usage_limit:
+    kind: gauge
+    note: "0 = unlimited"
+  pve_memory_size_bytes / pve_memory_usage_bytes:
+    kind: gauge
+  pve_disk_size_bytes / pve_disk_usage_bytes:
+    kind: gauge
+  pve_network_receive_bytes_total / pve_network_transmit_bytes_total:
+    kind: counter
+  pve_uptime:
+    kind: gauge
+    unit: s
+  pve_not_backed_up_info / pve_not_backed_up_total:
+    kind: info
+    note: "guests with no live-backup job"
+
+raw_pbs:
+  # Central pbs-exporter (natrontech v2.1.0) against PBS 4.2.5 on wpbs.
+  pbs_up:
+    kind: gauge
+  pbs_size / pbs_used / pbs_available:
+    kind: gauge
+    unit: bytes
+    labels: [datastore]
+  pbs_snapshot_count:
+    kind: gauge
+    labels: [datastore]
+  pbs_snapshot_vm_count:
+    kind: gauge
+    labels: [datastore, namespace, vm_id, vm_name]
+    note: "one series per VM ever backed up (111 on 2026-09-06). namespace = source host (locmox, onas, fernprox, fpx0, fpx2, wgpx15, pve, wpbs)."
+  pbs_snapshot_vm_last_timestamp:
+    kind: gauge
+    unit: unix_seconds
+    note: "0 = never backed up. age = time() - value."
+  pbs_snapshot_vm_last_verify:
+    kind: gauge
+    note: "1 = verified, 0 = never/failed. NOT a timestamp."
+  pbs_job_status / pbs_job_heartbeat:
+    kind: gauge
+    note: "full-backup job state / heartbeat"
+  pbs_storage_job_queue_size:
+    kind: gauge
+  pbs_storage_job_last_success / pbs_storage_job_last_attempt:
+    kind: gauge
+    unit: unix_seconds
+  pbs_storage_job_duration:
+    kind: gauge
+    unit: s
+
+raw_llm:
+  # LLM hub sidecars (see llmlab hub/). One hub per server (server label),
+  # per-model (model label). Raw vLLM/llama.cpp are also scraped directly
+  # (raw_vllm below) — the hub is the normalizer, the raw series are the
+  # fallback when the hub's parse of an engine fails.
+  hub_server_online:
+    kind: gauge
+  hub_server_gpus_stale / hub_server_gpu_count:
+    kind: gauge
+  hub_model_loaded:
+    kind: gauge
+  hub_vllm_metrics_ok:
+    kind: gauge
+    note: "vLLM models only. 1 = hub parsed the engine's /metrics, 0 = parse failed (that model's hub_model_* queue/kv/latency series are then ABSENT — fall back to raw vllm:*). vllm-3090 is currently 0."
+  hub_model_tokens_per_second:
+    kind: gauge
+    note: "decode throughput of active generation"
+  hub_model_prompt_tokens_per_second:
+    kind: gauge
+  hub_model_requests_waiting / hub_model_requests_running:
+    kind: gauge
+    note: "vLLM-side names. Can be absent when the hub parse fails."
+  hub_model_requests_processing / hub_model_requests_deferred:
+    kind: gauge
+    note: "llama.cpp-side names (processing = active, deferred = queued)"
+  hub_model_kv_cache_used:
+    kind: gauge
+    unit: ratio (hub normalizes 0..100 builds to 0..1)
+    note: "vLLM only. ABSENT for vllm-3090 today (hub parse gap) — raw vllm:kv_cache_usage_perc is the live source."
+  hub_model_prefix_cache_hit / hub_model_prompt_cache_hit:
+    kind: gauge
+    note: "vLLM vs llama.cpp cache-hit ratios (0..1)"
+  hub_model_spec_acceptance:
+    kind: gauge
+    note: "MTP/speculative acceptance (0..1)"
+  hub_model_ttft_p95_seconds / hub_model_tpot_p95_seconds / hub_model_e2e_p95_seconds / hub_model_queue_p95_seconds:
+    kind: gauge
+    unit: s
+    note: "hub-computed percentiles over a rolling window of completed requests; may be absent between requests (real 'no observation')"
+  hub_model_preemptions_total / hub_model_preemptions_window:
+    kind: counter / gauge
+  hub_model_finish_total_window / hub_model_finish_length_window / hub_model_finish_abort_window:
+    kind: gauge
+  hub_model_engine_asleep:
+    kind: gauge
+    note: "vLLM sleep-mode"
+  hub_model_busy_slots:
+    kind: gauge
+    note: "llama.cpp router"
+  hub_gpu_utilization_pct / hub_gpu_temp_c / hub_gpu_power_w:
+    kind: gauge
+    labels: [gpu]
+  hub_gpu_memory_used_mib / hub_gpu_memory_total_mib:
+    kind: gauge
+    unit: MiB
+
+raw_vllm:
+  # vLLM's own /metrics (192.168.0.24:8080), scraped directly.
+  # Instance-labeled only (no server/model) — joins with hub data are by
+  # human knowledge, not by label.
+  vllm:num_requests_waiting / vllm:num_requests_running:
+    kind: gauge
+  vllm:kv_cache_usage_perc:
+    kind: gauge
+    note: "0..1 — the only live KV gauge today"
+  vllm:inter_token_latency_seconds / vllm:e2e_request_latency_seconds:
+    kind: histogram
+    note: "use histogram_quantile(0.95, sum by (le) (rate(...[5m])))"
+  vllm:num_preemptions_total:
+    kind: counter
+  vllm:generation_tokens_total / vllm:prompt_tokens_total:
+    kind: counter
+  vllm:prefix_cache_hits_total / vllm:prefix_cache_queries_total:
+    kind: counter
+  vllm:engine_sleep_state:
+    kind: gauge
+
+raw_prometheus:
+  # Prometheus self-metrics (job=prometheus-self).
+  prometheus_tsdb_storage_bytes:
+    kind: gauge
+    note: "TSDB size on disk (the 16 GiB retention guard is against this)"
+  prometheus_tsdb_retention_seconds / prometheus_local_storage_retention_min_time:
+    kind: gauge
+  prometheus_local_storage_data_total_series:
+    kind: gauge
+  prometheus_local_storage_memory_chunk_bytes:
+    kind: gauge
+  prometheus_target_scrape_pool_targets / prometheus_sd_ragex_targets:
+    kind: gauge
+  prometheus_http_requests_total:
+    kind: counter
+    labels: [code, handler]
+  prometheus_rule_evaluation_failures_total / prometheus_rule_evaluation_duration_seconds:
+    kind: counter / summary
+  prometheus_notifications_total / prometheus_notifications_sent_total:
+    kind: counter
+
+# ------------------------------------------------------- recording rules
+# Verified live 2026-09-06. Rules are the machine-facing layer: agents
+# query these, dashboards prefer these, raw metrics are the fallback.
+recording_rules:
+  "homelab:cpu_util:avg5m": {unit: percent (0..100), expr: "100 - avg(rate(idle))"}
+  "homelab:load_per_core": {unit: load/core, expr: "node_load5 / core count"}
+  "homelab:mem_used:ratio": {unit: ratio, expr: "1 - Available/Total"}
+  "homelab:swap_used:ratio": {unit: ratio, expr: "(1 - Free/Total) * (Total>0); explicit 0 on hosts without swap"}
+  "homelab:fs_used:ratio": {unit: ratio, expr: "1 - avail/size, real fstypes only, zero-size pseudo-fs -> explicit 0"}
+  "homelab:fs_free:bytes": {unit: bytes}
+  "homelab:fs_inodes:ratio": {unit: ratio, expr: "1 - files_free/files, real fstypes, and-gated"}
+  "homelab:zfs_arc_hit:ratio": {unit: ratio, expr: "5m rate hits/(hits+misses), both-rate-gated (absent on idle)"}
+  "homelab:disk_io_util": {unit: ratio, expr: "rate(node_disk_io_time_seconds_total[5m])"}
+  "homelab:pbs_datastore_used:ratio": {unit: ratio, expr: "pbs_used / pbs_size"}
+  "homelab:backup_age_seconds": {unit: s, expr: "time() - pbs_snapshot_vm_last_timestamp (0 for never-backed-up guests!)"}
+  "homelab:backup_verified": {unit: bool, expr: "pbs_snapshot_vm_last_verify (1 = verified)"}
+  "homelab:llm_kv_used:ratio": {unit: ratio, expr: "hub kv (0..1) or raw vllm:kv_cache_usage_perc (kv_source tag)"}
+  "homelab:llm_queue:sum": {unit: count, expr: "waiting or deferred, per model; raw vllm fallback (queue_source tag)"}
+  "homelab:llm_running:sum": {unit: count, expr: "running or processing, per engine; raw vllm fallback (running_source tag)"}
+  "homelab:llm_ttft:seconds": {unit: s, expr: "hub p95 or raw vllm ttft histogram p95; absent between requests"}
+  "homelab:llm_tpot:seconds": {unit: s, expr: "hub p95 or raw vllm inter_token/tpot p95"}
+  "homelab:llm_e2e:seconds": {unit: s, expr: "hub p95 or raw vllm e2e p95"}
+  "homelab:llm_preemptions:rate": {unit: rate/s, expr: "rate(hub preemptions_total[5m]) or rate(raw vllm[15m])"}
+  "homelab:llm_tokens_per_second": {unit: tok/s, expr: "hub decode t/s per model"}
+  "homelab:llm_prompt_per_second": {unit: tok/s, expr: "hub prefill t/s per model"}
+  "homelab:gpu_utilization": {unit: percent (0..100), expr: "avg hub gpu pct by (server, gpu)"}
+  "homelab:llm_prefix_cache_hit:ratio": {unit: ratio, expr: "hub prefix or prompt cache hit, per model"}
+  "homelab:service_up": {unit: bool, expr: "up (stable name for agents)"}
+# Deliberately NOT rules (query raw in panels): hub_vllm_metrics_ok
+# (parse-health flag per vLLM model), pve_* (small cardinality, labels
+# speak for themselves), prometheus_* self-metrics.

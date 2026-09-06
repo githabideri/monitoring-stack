@@ -23,6 +23,10 @@ grafana_dashboard_files: []
 
 grafana_http_port: 3000
 
+# Which provisioned dashboard is the org home (login landing page).
+# Set to "" to fall back to Grafana's default welcome page.
+grafana_default_home_dashboard: "homelab-overview.json"
+
 # Canonical EXTERNAL url when behind a reverse proxy (NPM, ...). Leave empty
 # for direct-access installs. Set to e.g. "https://grafana-ui.example.lan/"
 # (proxy domain, no port) so login redirects/assets resolve through the proxy.

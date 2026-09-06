@@ -49,12 +49,20 @@ scrape_configs:
 {% endfor %}
 {% endif %}
 {% if job.params | default({}) | length > 0 %}
+    # Prometheus params: each value is a list of strings. Inventory may give
+    # a scalar (string) or a list; a string is ONE value, never a sequence of
+    # characters (Jinja treats strings as sequences, so the wrap below is
+    # explicit). Dicts are not supported here.
     params:
 {% for k, v in (job.params | default({})).items() %}
       {{ k }}:
-{% for val in (v if v is sequence else [v]) %}
+{% if v is string %}
+        - "{{ v }}"
+{% else %}
+{% for val in v %}
         - "{{ val }}"
 {% endfor %}
+{% endif %}
 {% endfor %}
 {% endif %}
 {% if job.tls_insecure_skip_verify | default(false) %}

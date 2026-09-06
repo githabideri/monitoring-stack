@@ -22,3 +22,8 @@ grafana_prometheus_url: "http://localhost:9090"
 grafana_dashboard_files: []
 
 grafana_http_port: 3000
+
+# Canonical EXTERNAL url when behind a reverse proxy (NPM, ...). Leave empty
+# for direct-access installs. Set to e.g. "https://grafana-ui.example.lan/"
+# (proxy domain, no port) so login redirects/assets resolve through the proxy.
+grafana_root_url: ""

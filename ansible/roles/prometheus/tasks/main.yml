@@ -18,20 +18,44 @@
 # (unprivileged CT is the security boundary; external ZFS mounts can't be
 # chowned by the CT user). For bare-metal/VM deployments keep the dedicated
 # user (default).
-- name: Ensure directories
+# Scope of tolerance: install/config dirs are strict; only the data dir may
+# be an external ZFS mount the service user can't chown from inside an
+# unprivileged CT, so only that one is lenient (plus a writability check).
+- name: Ensure install and config directories
   ansible.builtin.file:
     path: "{{ item }}"
     state: directory
     owner: "{{ prometheus_user if prometheus_user != 'root' else 'root' }}"
     group: "{{ prometheus_group }}"
     mode: "0750"
-  # chown on an externally-mounted ZFS dataset can fail in unprivileged CTs
-  failed_when: false
   loop:
     - "{{ prometheus_install_dir }}"
-    - "{{ prometheus_data_dir }}"
     - "{{ prometheus_config_dir }}"
     - "{{ prometheus_config_dir }}/rules.d"
+
+- name: Ensure data directory (may sit on an external ZFS mount)
+  ansible.builtin.file:
+    path: "{{ prometheus_data_dir }}"
+    state: directory
+    mode: "0750"
+  failed_when: false
+
+- name: Verify data directory is writable by the service user
+  ansible.builtin.command: test -w "{{ prometheus_data_dir }}"
+  become: true
+  become_user: "{{ prometheus_user }}"
+  changed_when: false
+  register: prometheus_data_dir_writable
+  failed_when: false
+
+- name: Fail with a clear message if the data directory is not writable
+  ansible.builtin.fail:
+    msg: >-
+      {{ prometheus_data_dir }} is not writable by {{ prometheus_user }}.
+      For an external ZFS mount in an unprivileged CT: run the service as
+      root (prometheus_user: root) or chown the dataset from the host:
+      zfs set owner={{ prometheus_user }}:{{ prometheus_group }} <dataset>
+  when: prometheus_data_dir_writable.rc != 0
 
 - name: Download release tarball
   ansible.builtin.get_url:

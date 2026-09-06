@@ -12,7 +12,15 @@ protocol = http
 http_port = {{ grafana_http_port }}
 # Bind all interfaces; keep the port on a trusted network and gate access
 # with a reverse proxy + Grafana's own authentication.
+# Behind a reverse proxy, set grafana_root_url to the EXTERNAL url (the proxy
+# domain, no port) — e.g. https://grafana-ui.example.lan/. The
+# %(protocol)s/%(domain)s form breaks behind a proxy because it appends the
+# internal :{{ grafana_http_port }} and Grafana then redirects logins there.
+{% if grafana_root_url is defined and grafana_root_url | length > 0 %}
+root_url = {{ grafana_root_url }}
+{% else %}
 root_url = %(protocol)s://%(domain)s:%(http_port)s/
+{% endif %}
 
 [users]
 # Admin password comes from grafana.env (GF_SECURITY_ADMIN_PASSWORD),

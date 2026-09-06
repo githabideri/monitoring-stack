@@ -69,9 +69,12 @@
 - name: Install
   # NOTE: Grafana >= 10.x tarballs unpack into grafana-v<ver>/ (with the v).
   # Trailing slashes on BOTH sides: copy the *contents* into the install dir.
+  # Sentinel: bin/grafana is the real executable the service runs (bin/grafana
+  # server); bin/grafana-server is only a small companion helper, so keying
+  # off it would not prove the main binary is in place.
   ansible.builtin.command:
     cmd: rsync -a --delete "/tmp/grafana-extract/grafana-v{{ grafana_version }}/" "{{ grafana_install_dir }}/"
-    creates: "{{ grafana_install_dir }}/bin/grafana-server"
+    creates: "{{ grafana_install_dir }}/bin/grafana"
 
 - name: Take ownership of install dir (Grafana writes caches into homepath)
   ansible.builtin.file:

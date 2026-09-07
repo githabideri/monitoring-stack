@@ -1,0 +1,15 @@
+[Unit]
+Description=Proxmox Backup Server API liveness probe (pbs_api_up)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=pbs-exporter
+Group=pbs-exporter
+EnvironmentFile=-/etc/pbs-exporter/pbs-exporter.env
+ExecStart=/usr/bin/python3 /opt/pbs-up-probe/pbs_up_probe.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -84,3 +84,36 @@
     name: pbs_exporter
     state: started
     enabled: true
+
+# --- pbs-up-probe: pbs_api_up (the exporter's pbs_up probes /nodes, which a
+# read-only DatastoreAudit token gets 403 on in PBS 3.x — false negative since
+# day one; this probe uses /api2/json/version instead) ---
+- name: Ensure pbs-up-probe install dir
+  ansible.builtin.file:
+    path: /opt/pbs-up-probe
+    state: directory
+    owner: "{{ pbs_exporter_user }}"
+    group: "{{ pbs_exporter_user }}"
+    mode: "0755"
+
+- name: Deploy pbs-up-probe script
+  ansible.builtin.copy:
+    src: pbs_up_probe.py
+    dest: /opt/pbs-up-probe/pbs_up_probe.py
+    owner: "{{ pbs_exporter_user }}"
+    group: "{{ pbs_exporter_user }}"
+    mode: "0755"
+  notify: restart pbs_up_probe
+
+- name: Deploy pbs-up-probe systemd unit
+  ansible.builtin.copy:
+    src: pbs_up_probe.service
+    dest: /etc/systemd/system/pbs_up_probe.service
+    mode: "0644"
+  notify: restart pbs_up_probe
+
+- name: Enable and start pbs-up-probe
+  ansible.builtin.systemd:
+    name: pbs_up_probe
+    state: started
+    enabled: true

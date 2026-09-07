@@ -4,3 +4,9 @@
     name: pbs_exporter
     daemon_reload: true
     state: restarted
+
+- name: restart pbs_up_probe
+  ansible.builtin.systemd:
+    name: pbs_up_probe
+    daemon_reload: true
+    state: restarted

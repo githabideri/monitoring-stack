@@ -9,32 +9,32 @@
     {
       "title": "Host detail",
       "type": "link",
-      "url": "/d/host-detail"
+      "url": "/d/homelab-host-detail"
     },
     {
       "title": "Backups",
       "type": "link",
-      "url": "/d/backups"
+      "url": "/d/homelab-backups"
     },
     {
       "title": "Proxmox",
       "type": "link",
-      "url": "/d/proxmox"
+      "url": "/d/homelab-proxmox"
     },
     {
       "title": "Storage / ZFS",
       "type": "link",
-      "url": "/d/storage-zfs"
+      "url": "/d/homelab-storage-zfs"
     },
     {
       "title": "GPU / LLM",
       "type": "link",
-      "url": "/d/gpu-llm"
+      "url": "/d/homelab-gpu-llm"
     },
     {
       "title": "Prometheus self",
       "type": "link",
-      "url": "/d/prometheus-self"
+      "url": "/d/homelab-prometheus-self"
     }
   ],
   "panels": [

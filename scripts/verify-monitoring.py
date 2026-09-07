@@ -394,6 +394,40 @@ def check_dashboards(dash_dir, prom, rep):
                     problems += 1
         if problems == 0:
             rep.ok(f"{name}: {checked} expressions, all return data")
+
+    # Cross-dashboard links: every /d/<uid> link (top-nav and panel links) must
+    # point at a dashboard uid that exists in this set — a wrong prefix (e.g.
+    # /d/proxmox when the uid is homelab-proxmox) 404s in the browser.
+    link_problems = 0
+    checked_links = 0
+
+    def collect_links(d, cands):
+        for l in d.get("links", []):
+            cands.append((l.get("url"), "top-nav"))
+
+        def walk(panels):
+            for p in panels:
+                if p.get("type") == "row":
+                    walk(p.get("panels", []))
+                else:
+                    for lk in p.get("links") or []:
+                        cands.append((lk.get("url"), "panel:" + str(p.get("title", "?"))))
+
+        walk(d.get("panels", []))
+
+    for name, d in loaded:
+        cands = []
+        collect_links(d, cands)
+        for url, where in cands:
+            if not isinstance(url, str) or not url.startswith("/d/"):
+                continue
+            target = url.split("/d/", 1)[1].split("?", 1)[0].split("/", 1)[0]
+            checked_links += 1
+            if target not in uids:
+                rep.fail(f"{name} [{where}]: link {url} -> no dashboard with uid '{target}'")
+                link_problems += 1
+    if checked_links and link_problems == 0:
+        rep.ok(f"cross-dashboard links: {checked_links} /d/ links, all resolve to a known uid")
     return uids, loaded
 
 

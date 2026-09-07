@@ -61,11 +61,26 @@ curl -s "localhost:9090/api/v1/query?query=up{job=\"node-exporter\",instance=\"1
   Prometheus LXC's vars (read-only token per node; the module name must
   match the scrape job's `module` param, and the job's `target` param
   must be `<pve-host:8006>`). No per-host installation; the central
-  exporter picks it up. PVE 9 pveum note: tokens default to
-  `privsep=1` (separate ACL set), so grant the token itself, e.g.
-  `pveum acl modify / -token 'user@pve!name' -role PVEAuditor` —
-  a privsep token with an empty set fails every permission check even
-  though its user has the role.
+  exporter picks it up. **PVE 9 token recipe (verified on 9.2.3–9.2.11
+  and 8.4):** a token's effective permissions are the *intersection* of
+  its parent user's ACL and the token's own ACL (tokens default to
+  `privsep=1`), so **both** need the grant — a token-only ACL 403s on
+  everything non-trivial:
+
+  ```bash
+  pveum user add monitoring@pve --comment "central pve-exporter (read-only)"  # 8.4: pveum user add user "comment"
+  pveum user token add monitoring@pve scraper
+  pveum acl modify / --users  "monitoring@pve"          --roles PVEAuditor
+  pveum acl modify / --tokens "monitoring@pve!scraper" --roles PVEAuditor
+  ```
+
+  `PVEAuditor` on `/` (Sys.Audit + VM.Audit + Datastore.Audit) covers
+  everything the exporter reads: node status, guest status/config,
+  cluster resources/status. No broader role needed. If the PVE host is
+  only reachable over Tailscale, the job's `target` param is its Tailscale
+  address (the CT needs a route for `100.64.0.0/10` via a box whose own
+  tailscale0 can serve it, with MASQ — see the homelab overview for the
+  concrete setup).
 - **LLM endpoint** — add a job targeting `<host:port>/metrics`
   (vLLM, llama.cpp, or the hub). The hub needs
   `scheme: https` + `tls_insecure_skip_verify: true` for self-signed

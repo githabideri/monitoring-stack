@@ -33,24 +33,22 @@
       },
       "description": "Hub sidecars serving metrics.",
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "short",
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "red",
-                  "value": null
-                },
-                {
-                  "color": "green",
-                  "value": 1
-                }
-              ]
-            }
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
           }
-        ],
+        },
         "overrides": []
       },
       "gridPos": {
@@ -90,11 +88,9 @@
       },
       "description": "Model slots with a model loaded.",
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "short"
-          }
-        ],
+        "defaults": {
+          "unit": "short"
+        },
         "overrides": []
       },
       "gridPos": {
@@ -134,24 +130,22 @@
       },
       "description": "Count of vLLM engines with KV-cache data in the pipeline. 1 each, whether via the hub or the raw vllm: fallback (kv_source=vllm-raw). 0 with a loaded vLLM model = both sources dead \u2014 latency/KV panels are blind for that engine.",
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "short",
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "red",
-                  "value": null
-                },
-                {
-                  "color": "green",
-                  "value": 1
-                }
-              ]
-            }
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
           }
-        ],
+        },
         "overrides": []
       },
       "gridPos": {
@@ -204,16 +198,14 @@
       },
       "description": "Decode throughput per model (exact-token rate). Flat 0 with a loaded model = idle, not broken; absent = no data.",
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "short",
-            "custom": {
-              "drawStyle": "line",
-              "fillOpacity": 10,
-              "lineWidth": 1
-            }
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 1
           }
-        ],
+        },
         "overrides": []
       },
       "gridPos": {
@@ -254,16 +246,14 @@
       },
       "description": "Prefill throughput per model \u2014 prompt processing capacity.",
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "short",
-            "custom": {
-              "drawStyle": "line",
-              "fillOpacity": 10,
-              "lineWidth": 1
-            }
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 1
           }
-        ],
+        },
         "overrides": []
       },
       "gridPos": {
@@ -317,16 +307,14 @@
       },
       "description": "Time to first token. Absent between requests = no observation (honest gap, not zero).",
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "s",
-            "custom": {
-              "drawStyle": "line",
-              "fillOpacity": 10,
-              "lineWidth": 1
-            }
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 1
           }
-        ],
+        },
         "overrides": []
       },
       "gridPos": {
@@ -367,16 +355,14 @@
       },
       "description": "Per-token latency (decode speed experienced by the user). 50ms \u2248 20 tok/s.",
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "ms",
-            "custom": {
-              "drawStyle": "line",
-              "fillOpacity": 10,
-              "lineWidth": 1
-            }
+        "defaults": {
+          "unit": "ms",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 1
           }
-        ],
+        },
         "overrides": []
       },
       "gridPos": {
@@ -417,16 +403,14 @@
       },
       "description": "End-to-end request latency p95 (queue + prefill + decode).",
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "s",
-            "custom": {
-              "drawStyle": "line",
-              "fillOpacity": 10,
-              "lineWidth": 1
-            }
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 1
           }
-        ],
+        },
         "overrides": []
       },
       "gridPos": {
@@ -480,16 +464,14 @@
       },
       "description": "Waiting (deferred) vs running (active) requests per engine. A growing queue with flat decode rate = saturation.",
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "short",
-            "custom": {
-              "drawStyle": "line",
-              "fillOpacity": 10,
-              "lineWidth": 1
-            }
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 1
           }
-        ],
+        },
         "overrides": []
       },
       "gridPos": {
@@ -540,35 +522,33 @@
       },
       "description": "KV-cache usage per vLLM engine (0..100). The *_source=vllm-raw series means the hub is serving it (hub parse down). Sustained >90% with preemptions = the model does not fit.",
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "percent",
-            "min": 0,
-            "max": 100,
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                },
-                {
-                  "color": "yellow",
-                  "value": 80
-                },
-                {
-                  "color": "red",
-                  "value": 95
-                }
-              ]
-            },
-            "custom": {
-              "drawStyle": "line",
-              "fillOpacity": 10,
-              "lineWidth": 1
-            }
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 80
+              },
+              {
+                "color": "red",
+                "value": 95
+              }
+            ]
+          },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 1
           }
-        ],
+        },
         "overrides": []
       },
       "gridPos": {
@@ -609,16 +589,14 @@
       },
       "description": "Preemptions per second. Any sustained non-zero = requests being evicted from KV and restarted \u2014 the engine is oversubscribed.",
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "ops",
-            "custom": {
-              "drawStyle": "line",
-              "fillOpacity": 20,
-              "lineWidth": 1
-            }
+        "defaults": {
+          "unit": "ops",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "lineWidth": 1
           }
-        ],
+        },
         "overrides": []
       },
       "gridPos": {
@@ -671,18 +649,16 @@
         "uid": "prometheus-homelab"
       },
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "percent",
-            "min": 0,
-            "max": 100,
-            "custom": {
-              "drawStyle": "line",
-              "fillOpacity": 10,
-              "lineWidth": 1
-            }
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 1
           }
-        ],
+        },
         "overrides": []
       },
       "gridPos": {
@@ -722,16 +698,14 @@
         "uid": "prometheus-homelab"
       },
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "mbytes",
-            "custom": {
-              "drawStyle": "line",
-              "fillOpacity": 10,
-              "lineWidth": 1
-            }
+        "defaults": {
+          "unit": "mbytes",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 1
           }
-        ],
+        },
         "overrides": []
       },
       "gridPos": {
@@ -782,18 +756,16 @@
       },
       "description": "Prefix/prompt-cache hit ratio per model (0..100). A falling ratio on a stable workload = changing prompt shapes (or cache pressure).",
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "percent",
-            "min": 0,
-            "max": 100,
-            "custom": {
-              "drawStyle": "line",
-              "fillOpacity": 10,
-              "lineWidth": 1
-            }
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 1
           }
-        ],
+        },
         "overrides": []
       },
       "gridPos": {

@@ -33,20 +33,18 @@
       },
       "description": "Current ARC cache size vs its auto-tuned maximum.",
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "bytes",
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "blue",
-                  "value": null
-                }
-              ]
-            }
+        "defaults": {
+          "unit": "bytes",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
           }
-        ],
+        },
         "overrides": []
       },
       "gridPos": {
@@ -86,30 +84,28 @@
       },
       "description": "ARC cache hit ratio over 5m. A falling trend = more read I/O than the cache absorbs.",
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "percent",
-            "min": 0,
-            "max": 100,
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "red",
-                  "value": null
-                },
-                {
-                  "color": "yellow",
-                  "value": 70
-                },
-                {
-                  "color": "green",
-                  "value": 85
-                }
-              ]
-            }
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 70
+              },
+              {
+                "color": "green",
+                "value": 85
+              }
+            ]
           }
-        ],
+        },
         "overrides": []
       },
       "gridPos": {
@@ -149,24 +145,22 @@
       },
       "description": "Pool/pool-dataset state (1 = ONLINE). Values above 1 = degraded or worse.",
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "short",
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                },
-                {
-                  "color": "red",
-                  "value": 2
-                }
-              ]
-            }
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 2
+              }
+            ]
           }
-        ],
+        },
         "overrides": []
       },
       "gridPos": {
@@ -206,16 +200,14 @@
       },
       "description": "ARC size, LRU list (c) and its ceiling (c_max) over time. c hovering at c_max = the cache cannot grow; misses will rise.",
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "bytes",
-            "custom": {
-              "drawStyle": "line",
-              "fillOpacity": 10,
-              "lineWidth": 1
-            }
+        "defaults": {
+          "unit": "bytes",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 1
           }
-        ],
+        },
         "overrides": []
       },
       "gridPos": {
@@ -276,16 +268,14 @@
       },
       "description": "Hit/miss rates from which the hit ratio is computed. (This node_exporter build exports no ARC read/write byte counters \u2014 disk I/O is on the next row.)",
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "ops",
-            "custom": {
-              "drawStyle": "line",
-              "fillOpacity": 10,
-              "lineWidth": 1
-            }
+        "defaults": {
+          "unit": "ops",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 1
           }
-        ],
+        },
         "overrides": []
       },
       "gridPos": {
@@ -349,35 +339,33 @@
       },
       "description": "Usage on real filesystems (ZFS dataset mounts, NFS/CIFS shares). Growth trends are visible at the default 7d range.",
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "percent",
-            "min": 0,
-            "max": 100,
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                },
-                {
-                  "color": "yellow",
-                  "value": 75
-                },
-                {
-                  "color": "red",
-                  "value": 90
-                }
-              ]
-            },
-            "custom": {
-              "drawStyle": "line",
-              "fillOpacity": 10,
-              "lineWidth": 1
-            }
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 75
+              },
+              {
+                "color": "red",
+                "value": 90
+              }
+            ]
+          },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 1
           }
-        ],
+        },
         "overrides": []
       },
       "gridPos": {
@@ -417,18 +405,16 @@
         "uid": "prometheus-homelab"
       },
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "percent",
-            "min": 0,
-            "max": 100,
-            "custom": {
-              "drawStyle": "line",
-              "fillOpacity": 10,
-              "lineWidth": 1
-            }
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 1
           }
-        ],
+        },
         "overrides": []
       },
       "gridPos": {
@@ -481,16 +467,14 @@
         "uid": "prometheus-homelab"
       },
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "Bps",
-            "custom": {
-              "drawStyle": "line",
-              "fillOpacity": 10,
-              "lineWidth": 1
-            }
+        "defaults": {
+          "unit": "Bps",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 1
           }
-        ],
+        },
         "overrides": []
       },
       "gridPos": {
@@ -540,18 +524,16 @@
         "uid": "prometheus-homelab"
       },
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "percentunit",
-            "min": 0,
-            "max": 1,
-            "custom": {
-              "drawStyle": "line",
-              "fillOpacity": 10,
-              "lineWidth": 1
-            }
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1,
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 1
           }
-        ],
+        },
         "overrides": []
       },
       "gridPos": {
@@ -592,16 +574,14 @@
       },
       "description": "Writes per second per ZFS dataset (sector ops) \u2014 which datasets are actually doing I/O.",
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "ops",
-            "custom": {
-              "drawStyle": "line",
-              "fillOpacity": 10,
-              "lineWidth": 1
-            }
+        "defaults": {
+          "unit": "ops",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 1
           }
-        ],
+        },
         "overrides": []
       },
       "gridPos": {

@@ -58,24 +58,22 @@
       },
       "description": "All scrape targets. 0 is the only interesting value.",
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "short",
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "red",
-                  "value": null
-                },
-                {
-                  "color": "green",
-                  "value": 1
-                }
-              ]
-            }
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
           }
-        ],
+        },
         "overrides": []
       },
       "gridPos": {
@@ -115,24 +113,22 @@
       },
       "description": "A nonzero value is a live incident: a host or exporter stopped answering.",
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "short",
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                },
-                {
-                  "color": "red",
-                  "value": 1
-                }
-              ]
-            }
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
           }
-        ],
+        },
         "overrides": []
       },
       "gridPos": {
@@ -172,20 +168,18 @@
       },
       "description": "PVE guests currently running (pve-exporter, all nodes).",
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "short",
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "blue",
-                  "value": null
-                }
-              ]
-            }
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
           }
-        ],
+        },
         "overrides": []
       },
       "gridPos": {
@@ -225,28 +219,26 @@
       },
       "description": "Oldest PBS guest backup, in hours. >36h = one full backup cycle missed.",
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "h",
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                },
-                {
-                  "color": "yellow",
-                  "value": 24
-                },
-                {
-                  "color": "red",
-                  "value": 36
-                }
-              ]
-            }
+        "defaults": {
+          "unit": "h",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 24
+              },
+              {
+                "color": "red",
+                "value": 36
+              }
+            ]
           }
-        ],
+        },
         "overrides": []
       },
       "gridPos": {
@@ -286,30 +278,28 @@
       },
       "description": "Fullest real filesystem across all hosts.",
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "percent",
-            "min": 0,
-            "max": 100,
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                },
-                {
-                  "color": "yellow",
-                  "value": 75
-                },
-                {
-                  "color": "red",
-                  "value": 90
-                }
-              ]
-            }
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 75
+              },
+              {
+                "color": "red",
+                "value": 90
+              }
+            ]
           }
-        ],
+        },
         "overrides": []
       },
       "gridPos": {
@@ -349,28 +339,26 @@
       },
       "description": "Requests waiting across all LLM models (0 = measured zero, not absent).",
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "short",
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                },
-                {
-                  "color": "yellow",
-                  "value": 1
-                },
-                {
-                  "color": "red",
-                  "value": 4
-                }
-              ]
-            }
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 4
+              }
+            ]
           }
-        ],
+        },
         "overrides": []
       },
       "gridPos": {
@@ -423,11 +411,9 @@
       },
       "description": "The fleet at a glance. Every cell from a recording rule; 'up' from Prometheus itself. Absent cells mean that metric has no data for that host (e.g. no swap device) \u2014 never a faked zero.",
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "auto"
-          }
-        ],
+        "defaults": {
+          "unit": "auto"
+        },
         "overrides": [
           {
             "matcher": {
@@ -618,18 +604,16 @@
         "uid": "prometheus-homelab"
       },
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "percent",
-            "min": 0,
-            "max": 100,
-            "custom": {
-              "drawStyle": "line",
-              "fillOpacity": 10,
-              "lineWidth": 1
-            }
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 1
           }
-        ],
+        },
         "overrides": []
       },
       "gridPos": {
@@ -669,18 +653,16 @@
         "uid": "prometheus-homelab"
       },
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "percentunit",
-            "min": 0,
-            "max": 1,
-            "custom": {
-              "drawStyle": "line",
-              "fillOpacity": 10,
-              "lineWidth": 1
-            }
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1,
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 1
           }
-        ],
+        },
         "overrides": []
       },
       "gridPos": {
@@ -721,18 +703,16 @@
       },
       "description": "Top 5 fullest filesystems across all hosts \u2014 the growth watch.",
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "percentunit",
-            "min": 0,
-            "max": 1,
-            "custom": {
-              "drawStyle": "line",
-              "fillOpacity": 10,
-              "lineWidth": 1
-            }
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1,
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 1
           }
-        ],
+        },
         "overrides": []
       },
       "gridPos": {
@@ -773,18 +753,16 @@
       },
       "description": "ZFS ARC cache hit ratio on the PVE host (0..1). A falling trend = more disk I/O than the cache can hold.",
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "percentunit",
-            "min": 0,
-            "max": 1,
-            "custom": {
-              "drawStyle": "line",
-              "fillOpacity": 10,
-              "lineWidth": 2
-            }
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1,
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 2
           }
-        ],
+        },
         "overrides": []
       },
       "gridPos": {
@@ -825,16 +803,14 @@
       },
       "description": "Decode throughput per LLM model. A flat 0 with a loaded model = idle, not broken; absent = no data.",
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "short",
-            "custom": {
-              "drawStyle": "line",
-              "fillOpacity": 10,
-              "lineWidth": 1
-            }
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 1
           }
-        ],
+        },
         "overrides": []
       },
       "gridPos": {
@@ -875,16 +851,14 @@
       },
       "description": "Waiting (queue) and running (active) requests per engine, both LLM engines.",
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "short",
-            "custom": {
-              "drawStyle": "line",
-              "fillOpacity": 10,
-              "lineWidth": 1
-            }
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 1
           }
-        ],
+        },
         "overrides": []
       },
       "gridPos": {

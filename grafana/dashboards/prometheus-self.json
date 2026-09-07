@@ -33,28 +33,26 @@
       },
       "description": "TSDB footprint: compacted blocks + in-memory head, against the 16 GiB retention guard in the config.",
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "bytes",
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                },
-                {
-                  "color": "yellow",
-                  "value": 8500000000.0
-                },
-                {
-                  "color": "red",
-                  "value": 13700000000.0
-                }
-              ]
-            }
+        "defaults": {
+          "unit": "bytes",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 8500000000.0
+              },
+              {
+                "color": "red",
+                "value": 13700000000.0
+              }
+            ]
           }
-        ],
+        },
         "overrides": []
       },
       "gridPos": {
@@ -94,24 +92,22 @@
       },
       "description": "Active series in the head. Growth trend = label cardinality drift to investigate.",
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "short",
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                },
-                {
-                  "color": "yellow",
-                  "value": 50000
-                }
-              ]
-            }
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 50000
+              }
+            ]
           }
-        ],
+        },
         "overrides": []
       },
       "gridPos": {
@@ -151,11 +147,9 @@
       },
       "description": "Samples per second accepted into the head.",
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "cps"
-          }
-        ],
+        "defaults": {
+          "unit": "cps"
+        },
         "overrides": []
       },
       "gridPos": {
@@ -208,16 +202,14 @@
       },
       "description": "Targets per scrape job and health. down = the job's targets failing (the job-level view of the overview's target stats).",
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "short",
-            "custom": {
-              "drawStyle": "line",
-              "fillOpacity": 10,
-              "lineWidth": 1
-            }
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 1
           }
-        ],
+        },
         "overrides": []
       },
       "gridPos": {
@@ -258,16 +250,14 @@
       },
       "description": "Scrapes per second per job. Prometheus 3.x no longer keeps scrape-duration quantiles, so this is the liveness check: a job at 0 is not scraping at all.",
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "ops",
-            "custom": {
-              "drawStyle": "line",
-              "fillOpacity": 10,
-              "lineWidth": 1
-            }
+        "defaults": {
+          "unit": "ops",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 1
           }
-        ],
+        },
         "overrides": []
       },
       "gridPos": {
@@ -308,16 +298,14 @@
       },
       "description": "Rule evaluation: failures (must stay 0) and group duration vs interval.",
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "s",
-            "custom": {
-              "drawStyle": "line",
-              "fillOpacity": 10,
-              "lineWidth": 1
-            }
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 1
           }
-        ],
+        },
         "overrides": [
           {
             "matcher": {
@@ -410,16 +398,14 @@
       },
       "description": "TSDB footprint over the retention window \u2014 the 90d/16GiB budget made visible.",
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "bytes",
-            "custom": {
-              "drawStyle": "line",
-              "fillOpacity": 20,
-              "lineWidth": 1
-            }
+        "defaults": {
+          "unit": "bytes",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "lineWidth": 1
           }
-        ],
+        },
         "overrides": []
       },
       "gridPos": {
@@ -479,16 +465,14 @@
         "uid": "prometheus-homelab"
       },
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "short",
-            "custom": {
-              "drawStyle": "line",
-              "fillOpacity": 20,
-              "lineWidth": 1
-            }
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "lineWidth": 1
           }
-        ],
+        },
         "overrides": []
       },
       "gridPos": {

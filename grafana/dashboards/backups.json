@@ -33,24 +33,22 @@
       },
       "description": "pbs-exporter reachability against the Proxmox Backup Server. 0 = no backup data at all \u2014 everything else on this dashboard is stale.",
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "short",
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "red",
-                  "value": null
-                },
-                {
-                  "color": "green",
-                  "value": 1
-                }
-              ]
-            }
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
           }
-        ],
+        },
         "overrides": []
       },
       "gridPos": {
@@ -90,30 +88,28 @@
       },
       "description": "Backup datastore capacity (used/size).",
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "percent",
-            "min": 0,
-            "max": 100,
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                },
-                {
-                  "color": "yellow",
-                  "value": 75
-                },
-                {
-                  "color": "red",
-                  "value": 90
-                }
-              ]
-            }
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 75
+              },
+              {
+                "color": "red",
+                "value": 90
+              }
+            ]
           }
-        ],
+        },
         "overrides": []
       },
       "gridPos": {
@@ -153,11 +149,9 @@
       },
       "description": "Guests with at least one snapshot on PBS.",
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "short"
-          }
-        ],
+        "defaults": {
+          "unit": "short"
+        },
         "overrides": []
       },
       "gridPos": {
@@ -197,28 +191,26 @@
       },
       "description": "Oldest guest snapshot across all namespaces. Daily backup => >36h means a missed cycle.",
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "h",
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                },
-                {
-                  "color": "yellow",
-                  "value": 24
-                },
-                {
-                  "color": "red",
-                  "value": 36
-                }
-              ]
-            }
+        "defaults": {
+          "unit": "h",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 24
+              },
+              {
+                "color": "red",
+                "value": 36
+              }
+            ]
           }
-        ],
+        },
         "overrides": []
       },
       "gridPos": {
@@ -258,24 +250,22 @@
       },
       "description": "Guests that have NEVER been backed up (last_timestamp = 0).",
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "short",
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                },
-                {
-                  "color": "red",
-                  "value": 1
-                }
-              ]
-            }
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
           }
-        ],
+        },
         "overrides": []
       },
       "gridPos": {
@@ -315,24 +305,22 @@
       },
       "description": "Guests whose last snapshot was never verified (pbs_snapshot_vm_last_verify = 0). Unverified snapshots are not trusted for restore.",
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "short",
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                },
-                {
-                  "color": "yellow",
-                  "value": 1
-                }
-              ]
-            }
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              }
+            ]
           }
-        ],
+        },
         "overrides": []
       },
       "gridPos": {
@@ -372,24 +360,22 @@
       },
       "description": "PVE guests with no live-backup job at all (pve-exporter). Independent of PBS history.",
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "short",
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                },
-                {
-                  "color": "red",
-                  "value": 1
-                }
-              ]
-            }
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
           }
-        ],
+        },
         "overrides": []
       },
       "gridPos": {
@@ -442,11 +428,9 @@
       },
       "description": "One row per guest. age = time() - last snapshot timestamp (0 = never). verified: 1 = snapshot verified, 0 = not. Sorted by age \u2014 the rows at the top are the ones to worry about.",
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "auto"
-          }
-        ],
+        "defaults": {
+          "unit": "auto"
+        },
         "overrides": [
           {
             "matcher": {
@@ -555,33 +539,31 @@
       },
       "description": "Backup age per namespace (source host). A line that climbs past 36h for a namespace = that host's backup job is broken.",
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "h",
-            "custom": {
-              "drawStyle": "line",
-              "fillOpacity": 10,
-              "lineWidth": 1
-            },
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                },
-                {
-                  "color": "yellow",
-                  "value": 24
-                },
-                {
-                  "color": "red",
-                  "value": 36
-                }
-              ]
-            }
+        "defaults": {
+          "unit": "h",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 1
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 24
+              },
+              {
+                "color": "red",
+                "value": 36
+              }
+            ]
           }
-        ],
+        },
         "overrides": []
       },
       "gridPos": {
@@ -621,18 +603,16 @@
         "uid": "prometheus-homelab"
       },
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "percent",
-            "min": 0,
-            "max": 100,
-            "custom": {
-              "drawStyle": "line",
-              "fillOpacity": 20,
-              "lineWidth": 1
-            }
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "lineWidth": 1
           }
-        ],
+        },
         "overrides": []
       },
       "gridPos": {
@@ -673,16 +653,14 @@
       },
       "description": "Snapshot counts per source host \u2014 capacity and coverage over time.",
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "short",
-            "custom": {
-              "drawStyle": "bars",
-              "fillOpacity": 40,
-              "lineWidth": 1
-            }
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 40,
+            "lineWidth": 1
           }
-        ],
+        },
         "overrides": []
       },
       "gridPos": {

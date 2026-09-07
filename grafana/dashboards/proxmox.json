@@ -33,11 +33,9 @@
       },
       "description": "PVE nodes reporting through the central exporter.",
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "short"
-          }
-        ],
+        "defaults": {
+          "unit": "short"
+        },
         "overrides": []
       },
       "gridPos": {
@@ -76,11 +74,9 @@
         "uid": "prometheus-homelab"
       },
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "short"
-          }
-        ],
+        "defaults": {
+          "unit": "short"
+        },
         "overrides": []
       },
       "gridPos": {
@@ -119,20 +115,18 @@
         "uid": "prometheus-homelab"
       },
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "short",
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "blue",
-                  "value": null
-                }
-              ]
-            }
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
           }
-        ],
+        },
         "overrides": []
       },
       "gridPos": {
@@ -172,24 +166,22 @@
       },
       "description": "Guests without a PVE live-backup job. 0 is the goal.",
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "short",
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                },
-                {
-                  "color": "red",
-                  "value": 1
-                }
-              ]
-            }
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
           }
-        ],
+        },
         "overrides": []
       },
       "gridPos": {
@@ -229,11 +221,9 @@
       },
       "description": "Storage pools visible to the node (local-zfs, shared, ...).",
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "short"
-          }
-        ],
+        "defaults": {
+          "unit": "short"
+        },
         "overrides": []
       },
       "gridPos": {
@@ -273,11 +263,9 @@
       },
       "description": "PVE subscription state (0 = none, 1 = OK, 2 = expired, ...). Affects update/backup features.",
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "short"
-          }
-        ],
+        "defaults": {
+          "unit": "short"
+        },
         "overrides": []
       },
       "gridPos": {
@@ -316,11 +304,9 @@
         "uid": "prometheus-homelab"
       },
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "short"
-          }
-        ],
+        "defaults": {
+          "unit": "short"
+        },
         "overrides": []
       },
       "gridPos": {
@@ -374,11 +360,9 @@
       },
       "description": "One row per guest (name/node/type from pve_guest_info). CPU% = usage ratio of the guest's allocation (limit 0 = all cores). Mem%/Disk% of the configured size. Sorted by memory usage.",
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "auto"
-          }
-        ],
+        "defaults": {
+          "unit": "auto"
+        },
         "overrides": [
           {
             "matcher": {
@@ -617,17 +601,15 @@
         "uid": "prometheus-homelab"
       },
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "percent",
-            "min": 0,
-            "custom": {
-              "drawStyle": "line",
-              "fillOpacity": 10,
-              "lineWidth": 1
-            }
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 1
           }
-        ],
+        },
         "overrides": []
       },
       "gridPos": {
@@ -667,18 +649,16 @@
         "uid": "prometheus-homelab"
       },
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "percent",
-            "min": 0,
-            "max": 100,
-            "custom": {
-              "drawStyle": "line",
-              "fillOpacity": 10,
-              "lineWidth": 1
-            }
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 1
           }
-        ],
+        },
         "overrides": []
       },
       "gridPos": {
@@ -718,18 +698,16 @@
         "uid": "prometheus-homelab"
       },
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "percent",
-            "min": 0,
-            "max": 100,
-            "custom": {
-              "drawStyle": "line",
-              "fillOpacity": 10,
-              "lineWidth": 1
-            }
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 1
           }
-        ],
+        },
         "overrides": []
       },
       "gridPos": {
@@ -769,16 +747,14 @@
         "uid": "prometheus-homelab"
       },
       "fieldConfig": {
-        "defaults": [
-          {
-            "unit": "bps",
-            "custom": {
-              "drawStyle": "line",
-              "fillOpacity": 10,
-              "lineWidth": 1
-            }
+        "defaults": {
+          "unit": "bps",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 1
           }
-        ],
+        },
         "overrides": []
       },
       "gridPos": {

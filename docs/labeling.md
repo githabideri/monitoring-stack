@@ -8,7 +8,7 @@ schemes.
 
 | Label | Meaning | Example values |
 |---|---|---|
-| `site` | Physical location / site (applied via `global.external_labels`) | `vienna`, `freistadt`, `vps` |
+| `location` | Physical location / site, per target (scrape-config `target_labels`) | `vienna`, `freistadt`, `vps` |
 | `host` | Hostname or stable host identifier (use per-job labels or instance) | `pve1`, `nas1` |
 | `role` | What the target is, per scrape job | `self`, `host`, `pve-node`, `pve-cluster`, `pbs`, `llm-hub`, `llm-vllm`, `llm-llamacpp` |
 | `service` | Service identity when a job scrapes one service on many hosts | `grafana`, `pihole` |
@@ -30,6 +30,11 @@ schemes.
 High-cardinality labels silently blow up the TSDB and break agents'
 assumptions about query cost. If a metric has a dimension like that,
 aggregate before storing it (exporter-side) or exclude the metric.
+
+**3.x gotcha:** `global.external_labels` is parsed by Prometheus 3.x but
+is **not attached to series** (in 3.x it only seeds the scrape offset).
+If you need a global-style label, attach it per target via
+`target_labels` (or per job) — do not rely on external labels.
 
 ## Naming style
 

@@ -12,7 +12,9 @@ global:
   scrape_interval: 30s
   evaluation_interval: 30s
   external_labels:
-    site: vienna        # site-specific
+    site: vienna        # site-specific — note: Prometheus 3.x parses this
+                        # but does NOT attach it to series (2.x behavior);
+                        # prefer per-target `target_labels` for site labels
 
 storage:
   tsdb:

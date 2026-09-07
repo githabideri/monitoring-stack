@@ -170,6 +170,10 @@ raw_pbs:
   # Central pbs-exporter (natrontech) against PBS 3.3 on the Proxmox Backup Server.
   pbs_up:
     kind: gauge
+    note: >- KNOWN FALSE NEGATIVE — the exporter's liveness probe hits
+    /api2/json/nodes, which a read-only DatastoreAudit token gets 403 on in
+    PBS 3.x (never has since day one). Do not alert on pbs_up==0; use
+    pbs_api_up (pbs-up-probe job) for liveness and data freshness for health.
   pbs_size / pbs_used / pbs_available:
     kind: gauge
     unit: bytes
@@ -181,6 +185,19 @@ raw_pbs:
     kind: gauge
     labels: [datastore, namespace, vm_id, vm_name]
     note: "one series per guest ever backed up. namespace = source host name (one per backed-up host); decommissioned hosts leave their historical namespace behind (see the Backups dashboard)."
+  pbs_api_up:
+    kind: gauge
+    source: pbs-up-probe (same CT, :10020; probes /api2/json/version, which the read-only token may access)
+    note: "the real liveness bit. pbs_up (pbs-exporter) is a documented false negative — see above."
+  pbs_probe_seconds:
+    kind: gauge
+    unit: seconds
+    source: pbs-up-probe
+  pbs_version_info:
+    kind: gauge
+    labels: [version]
+    source: pbs-up-probe
+    note: "supersedes pbs_version (pbs-exporter) as the freshest version source."
   pbs_snapshot_vm_last_timestamp:
     kind: gauge
     unit: unix_seconds

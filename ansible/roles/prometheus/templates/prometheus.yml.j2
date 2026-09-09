@@ -34,12 +34,16 @@ scrape_configs:
         labels:
           role: self
 {% for job in prometheus_scrape_configs %}
+{% set tl = job.target_labels | default({}) %}
+{% set plain = (job.targets | default([])) | reject('in', tl.keys() | list) | list %}
+{% set per_target = tl | dict2items %}
   - job_name: {{ job.job }}
     metrics_path: {{ job.metrics_path | default('/metrics') }}
     scheme: {{ job.scheme | default('http') }}
     static_configs:
+{% if plain | length > 0 %}
       - targets:
-{% for t in job.targets %}
+{% for t in plain %}
           - "{{ t }}"
 {% endfor %}
 {% if job.labels | default({}) | length > 0 %}
@@ -48,6 +52,15 @@ scrape_configs:
           {{ k }}: "{{ v }}"
 {% endfor %}
 {% endif %}
+{% endif %}
+{% for e in per_target %}
+      - targets:
+          - "{{ e.key }}"
+        labels:
+{% for k, v in (job.labels | default({}) | combine(e.value)).items() %}
+          {{ k }}: "{{ v }}"
+{% endfor %}
+{% endfor %}
 {% if job.params | default({}) | length > 0 %}
     # Prometheus params: each value renders as a list of strings. The
     # inventory contract is: a STRING (rendered as a single-value list) or a

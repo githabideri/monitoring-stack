@@ -685,7 +685,7 @@
           },
           "expr": "homelab:gpu_utilization",
           "instant": false,
-          "legendFormat": "{{server}} {{gpu}}",
+          "legendFormat": "{{server}} {{gpu}} #{{idx}}",
           "refId": "A"
         }
       ],
@@ -732,7 +732,7 @@
           },
           "expr": "hub_gpu_memory_used_mib",
           "instant": false,
-          "legendFormat": "{{server}} {{gpu}}",
+          "legendFormat": "{{server}} {{gpu}} #{{idx}}",
           "refId": "A"
         },
         {
@@ -742,7 +742,7 @@
           },
           "expr": "hub_gpu_memory_total_mib",
           "instant": false,
-          "legendFormat": "{{server}} {{gpu}} (total)",
+          "legendFormat": "{{server}} {{gpu}} #{{idx}} (total)",
           "refId": "B"
         }
       ],

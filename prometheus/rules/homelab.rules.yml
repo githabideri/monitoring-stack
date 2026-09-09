@@ -175,7 +175,7 @@ groups:
 
       # GPU utilisation per physical GPU (0..100)
       - record: homelab:gpu_utilization
-        expr: avg by (server, gpu) (hub_gpu_utilization_pct)
+        expr: avg by (server, gpu, idx) (hub_gpu_utilization_pct)
 
       # Prefix/prompt-cache hit ratio (0..1). vLLM: prefix_cache_hit, llama.cpp:
       # prompt_cache_hit — `or` keeps one stable name across engines.

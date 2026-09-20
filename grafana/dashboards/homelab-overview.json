@@ -217,7 +217,7 @@
         "type": "prometheus",
         "uid": "prometheus-homelab"
       },
-      "description": "Oldest PBS guest backup, in hours. >36h = one full backup cycle missed.",
+      "description": "Oldest PBS guest backup, in hours. >36h = one full backup cycle missed. The pve namespace carries pre-migration backups of migrated/retired guests and currently dominates this max — click through to the Backups dashboard for the live per-namespace picture.",
       "fieldConfig": {
         "defaults": {
           "unit": "h",
@@ -248,6 +248,12 @@
         "y": 5
       },
       "id": 4,
+      "links": [
+        {
+          "title": "Backups dashboard (per-namespace detail)",
+          "url": "/d/homelab-backups"
+        }
+      ],
       "options": {
         "colorMode": "background",
         "graphMode": "area",
@@ -263,7 +269,7 @@
             "type": "prometheus",
             "uid": "prometheus-homelab"
           },
-          "expr": "max(homelab:backup_age_seconds / 3600)",
+          "expr": "topk(1, homelab:backup_age_seconds / 3600)",
           "instant": true,
           "refId": "A"
         }
@@ -276,7 +282,7 @@
         "type": "prometheus",
         "uid": "prometheus-homelab"
       },
-      "description": "Fullest real filesystem across all hosts.",
+      "description": "Fullest real filesystem across all hosts (CT/VM disk images count at their mountpoint). Click through to the host detail of the fullest filesystem's host.",
       "fieldConfig": {
         "defaults": {
           "unit": "percent",
@@ -309,6 +315,12 @@
         "y": 5
       },
       "id": 5,
+      "links": [
+        {
+          "title": "Host detail of the fullest filesystem's host",
+          "url": "/d/homelab-host-detail?var-host=${__field.labels.host}"
+        }
+      ],
       "options": {
         "colorMode": "background",
         "graphMode": "area",
@@ -324,7 +336,7 @@
             "type": "prometheus",
             "uid": "prometheus-homelab"
           },
-          "expr": "max(homelab:fs_used:ratio * 100)",
+          "expr": "topk(1, homelab:fs_used:ratio * 100)",
           "instant": true,
           "refId": "A"
         }

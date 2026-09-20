@@ -254,6 +254,12 @@
         "y": 5
       },
       "id": 4,
+      "links": [
+        {
+          "title": "Backups dashboard (per-namespace detail)",
+          "url": "/d/homelab-backups"
+        }
+      ],
       "options": {
         "colorMode": "background",
         "graphMode": "area",
@@ -282,7 +288,7 @@
         "type": "prometheus",
         "uid": "prometheus-homelab"
       },
-      "description": "Fullest real filesystem across all hosts (CT/VM disk images count at their mountpoint). Clicking opens the host detail of the fullest filesystem's host.",
+      "description": "Fullest real filesystem across all hosts (CT/VM disk images count at their mountpoint). Clicking the number opens the host detail of the fullest filesystem's host; the link button opens the host-detail dashboard (pick a host in the dropdown).",
       "fieldConfig": {
         "defaults": {
           "dataLinks": [
@@ -321,6 +327,12 @@
         "y": 5
       },
       "id": 5,
+      "links": [
+        {
+          "title": "Host detail (pick host in the dropdown)",
+          "url": "/d/homelab-host-detail"
+        }
+      ],
       "options": {
         "colorMode": "background",
         "graphMode": "area",

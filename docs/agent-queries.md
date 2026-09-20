@@ -58,6 +58,11 @@ homelab:backup_age_seconds
 # Stale backups (> 2 days)
 homelab:backup_age_seconds > 2 * 86400
 
+# Stale backups among IN-SCOPE namespaces only (namespaces with no backup in
+# 60 days read 0, so dead namespaces like pve post-migration don't mask real
+# staleness; the raw query above still sees everything)
+homelab:backup_age_inscope_seconds > 2 * 86400
+
 # Backups whose last snapshot is unverified
 homelab:backup_verified == 0
 ```

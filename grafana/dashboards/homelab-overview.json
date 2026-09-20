@@ -217,7 +217,7 @@
         "type": "prometheus",
         "uid": "prometheus-homelab"
       },
-      "description": "Oldest PBS guest backup, in hours. >36h = one full backup cycle missed. The pve namespace carries pre-migration backups of migrated/retired guests and currently dominates this max — clicking opens the Backups dashboard for the live per-namespace picture.",
+      "description": "Oldest PBS guest backup (in hours) among IN-SCOPE namespaces — a namespace counts if any of its guests got a backup in the last 60 days, so fully dead ones (e.g. pve post-migration) can't dominate. >36h = one full backup cycle missed. Clicking opens the Backups dashboard for the per-namespace picture, including dead namespaces.",
       "fieldConfig": {
         "defaults": {
           "dataLinks": [
@@ -275,7 +275,7 @@
             "type": "prometheus",
             "uid": "prometheus-homelab"
           },
-          "expr": "topk(1, homelab:backup_age_seconds / 3600)",
+          "expr": "max(homelab:backup_age_inscope_seconds / 3600)",
           "instant": true,
           "refId": "A"
         }

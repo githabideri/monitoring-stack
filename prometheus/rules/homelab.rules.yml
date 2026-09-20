@@ -100,6 +100,19 @@ groups:
       - record: homelab:backup_age_seconds
         expr: time() - pbs_snapshot_vm_last_timestamp
 
+      # Backup age restricted to IN-SCOPE namespaces: a namespace is in
+      # scope if ANY of its guests got a backup within the last 60 days.
+      # Out-of-scope (fully dead) namespaces read 0 here — e.g. the pve
+      # namespace after the pve -> locmox migration, whose entries are all
+      # pre-migration relics and would otherwise dominate the overview
+      # stat. The raw homelab:backup_age_seconds keeps everything (the
+      # Backups dashboard shows it there).
+      - record: homelab:backup_age_inscope_seconds
+        expr: >-
+          homelab:backup_age_seconds
+          * on(namespace) group_left()
+          (count by (namespace) (homelab:backup_age_seconds < 60 * 86400) > bool 0)
+
       # Verify status of the last backup per guest (1 = verified, 0 = not)
       - record: homelab:backup_verified
         expr: pbs_snapshot_vm_last_verify

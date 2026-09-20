@@ -398,6 +398,7 @@ recording_rules:
   "homelab:disk_io_util": {unit: ratio, expr: "rate(node_disk_io_time_seconds_total[5m])"}
   "homelab:pbs_datastore_used:ratio": {unit: ratio, expr: "pbs_used / pbs_size"}
   "homelab:backup_age_seconds": {unit: s, expr: "time() - pbs_snapshot_vm_last_timestamp (0 for never-backed-up guests!)"}
+  "homelab:backup_age_inscope_seconds": {unit: s, expr: "backup_age_seconds x in-scope gate: 0 for namespaces with no backup in the last 60 days (fully dead namespaces, e.g. pve post-migration); equals backup_age_seconds in active namespaces"}
   "homelab:backup_verified": {unit: bool, expr: "pbs_snapshot_vm_last_verify (1 = verified)"}
   "homelab:llm_kv_used:ratio": {unit: ratio, expr: "hub kv (0..1) or raw vllm:kv_cache_usage_perc (kv_source tag)"}
   "homelab:llm_queue:sum": {unit: count, expr: "waiting or deferred, per model; raw vllm fallback (queue_source tag)"}

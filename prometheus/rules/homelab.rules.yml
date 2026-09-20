@@ -196,7 +196,7 @@ groups:
   # on the PVE hosts: one box runs the whole-tailnet vantage (its
   # `tailscale status --json` sees every peer), the designated advertisers
   # run a local self-report. Subnet labels are NAMES (main-lan,
-  # offsite-lan, vps-lan-*), never CIDRs, so this public repo can
+  # offsite-lan, museum-lan, vps-lan-*), never CIDRs, so this public repo can
   # document and consume them safely.
   #
   # Zero/absent: a 0 is an OBSERVATION (checked, broken). Absent means the
@@ -215,9 +215,10 @@ groups:
       - record: homelab:tailscale_route_advertisers
         expr: count by (subnet) (tailscale_route_advertised == 1)
 
-      # Drift monitor's current drift count (0 = allowlist clean; >0 =
-      # see the tailscale_route_drift series / the drift log on the vantage
-      # host).
+      # Drift monitor's current drift count (0 = allowlist clean — by-design
+      # `accepted` on-demand routers excluded; >0 = see the
+      # tailscale_route_drift series / the drift log on the vantage host).
+      # The count equals the number of current tailscale_route_drift series.
       - record: homelab:tailscale_drift_total
         expr: max(tailscale_route_drift_total)
 

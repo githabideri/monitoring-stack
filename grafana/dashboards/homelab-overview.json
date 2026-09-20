@@ -524,7 +524,7 @@
         "type": "prometheus",
         "uid": "prometheus-homelab"
       },
-      "description": "Allowlist drift: unexpected advertisers, offline-while-advertising, missing required routers. 0 = clean. No data = the drift check is not running.",
+      "description": "Allowlist drift: unexpected advertisers, offline-while-advertising, missing required routers — by-design `accepted` on-demand routers (museum net) are excluded. 0 = clean. No data = the drift check is not running.",
       "fieldConfig": {
         "defaults": {
           "unit": "short",

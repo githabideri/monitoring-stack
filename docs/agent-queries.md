@@ -72,15 +72,17 @@ homelab:tailscale_offsite_healthy
 # Same question for the main-site LAN (the vantage host is its router).
 homelab:tailscale_main_healthy
 
-# Per subnet: is the designated router up and advertising (1/0/absent)?
+# Per subnet: is the router up and advertising (1/0/absent)?
+# (museum-lan: the on-demand laptop — 0 = it is off, expected, not drift)
 homelab:tailscale_route_up
 
 # Healthy designated routers per subnet (0 = nobody routes that LAN)
 homelab:tailscale_route_advertisers
 
-# Allowlist drift (0 = clean; per-entry detail below)
+# Allowlist drift (0 = clean — by-design `accepted` on-demand routers excluded;
+# per-entry detail below, one series per current entry)
 homelab:tailscale_drift_total
-tailscale_route_drift          # kind = missing | unexpected | offline
+tailscale_route_drift          # kind = missing | offline | offline-advertiser | unexpected | vantage-down
 
 # Is the tailnet check itself alive? (1 = ran < 5 min ago)
 homelab:tailscale_check_fresh

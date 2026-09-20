@@ -331,7 +331,7 @@ raw_prometheus:
 # textfile collector on the PVE hosts: one host runs the whole-tailnet vantage
 # (its `tailscale status --json` sees every peer), the designated
 # advertisers run a self-report. Subnet labels carry NAMES (main-lan,
-# offsite-lan, vps-lan-*), never CIDRs, so the public repo can document
+# offsite-lan, museum-lan, vps-lan-*), never CIDRs, so the public repo can document
 # them safely. Refresh ~2 min.
 #
 # Zero/absent: a 0 is an OBSERVATION (checked, not the case). A missing
@@ -341,18 +341,18 @@ raw_tailnet:
   tailscale_route_advertised:
     kind: gauge
     labels: [subnet, host]
-    semantics: "1 = the designated router for that subnet is online AND advertising it (the vantage's whole-tailnet view); 0 = down or not advertising. One series per designated router. The subnet is NAMED, not a CIDR."
+    semantics: "1 = the router for that subnet is online AND advertising it (the vantage's whole-tailnet view); 0 = down or not advertising. One series per allowlist-designated router, including `accepted` by-design on-demand routers (museum-lan: 0 = its router is off, the expected state, not drift). The subnet is NAMED, not a CIDR."
   tailscale_peer_online:
     kind: gauge
     labels: [host]
     semantics: "1 = tailnet peer online (watch list: PVE hosts + key service nodes); 0 = offline. A 0 is an observation, not absence."
   tailscale_route_drift_total:
     kind: gauge
-    semantics: "current count of allowlist drift entries (unexpected advertiser, offline-while-advertising, missing required router). 0 = clean."
+    semantics: "current count of drift entries (unexpected advertiser, offline-while-advertising, missing required router); by-design `accepted` on-demand routers are excluded, so 0 = clean."
   tailscale_route_drift:
     kind: info
     labels: [kind, host, subnet]
-    semantics: "one series (value 1) per current drift entry; absent when that entry is gone."
+    semantics: "one series (value 1) per current drift entry — kinds: missing | offline | offline-advertiser | unexpected | vantage-down; absent when that entry is gone. By-design `accepted` allowlist entries never produce entries. The count (tailscale_route_drift_total) always equals the number of current series."
   tailscale_route_drift_check_ts:
     kind: gauge
     unit: unix_seconds
@@ -411,9 +411,9 @@ recording_rules:
   "homelab:gpu_utilization": {unit: percent (0..100), expr: "avg hub gpu pct by (server, gpu)"}
   "homelab:llm_prefix_cache_hit:ratio": {unit: ratio, expr: "hub prefix or prompt cache hit, per model"}
   "homelab:service_up": {unit: bool, expr: "up (stable name for agents)"}
-  "homelab:tailscale_route_up": {unit: bool, expr: "max by (subnet) of the vantage gauge — designated router online AND advertising"}
+  "homelab:tailscale_route_up": {unit: bool, expr: "max by (subnet) of the vantage gauge — router online AND advertising (museum-lan: on-demand laptop, 0 = off, expected)"}
   "homelab:tailscale_route_advertisers": {unit: count, expr: "healthy designated routers per subnet (0 = nobody routes that LAN)"}
-  "homelab:tailscale_drift_total": {unit: count, expr: "allowlist drift count (0 = clean)"}
+  "homelab:tailscale_drift_total": {unit: count, expr: "drift count, by-design `accepted` on-demand routers excluded (0 = clean)"}
   "homelab:tailscale_check_fresh": {unit: bool, expr: "max(check ts) > bool 0 — the check's sample is inside the 5-min staleness window (1 = alive; ABSENT = dead > 5 min)"}
   "homelab:tailscale_offsite_healthy": {unit: bool, expr: "product of 4 legs: route up (vantage) × the offsite router's self-reported advertisement × its self-reported IP forwarding × check fresh. 0 = any leg broken; absent = a leg produced no data. THE question-first answer for 'can I reach the offsite LAN'."}
   "homelab:tailscale_main_healthy": {unit: bool, expr: "route up (vantage, which is the main-site router) × vantage IP forwarding × check fresh"}

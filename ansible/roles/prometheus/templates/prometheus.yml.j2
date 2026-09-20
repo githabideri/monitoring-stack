@@ -1,0 +1,90 @@
+---
+# Prometheus main config.
+#
+# Prometheus 3.x: the TSDB *path* is a CLI flag (--storage.tsdb.path, set in
+# the service unit); retention stays in the config file. Time and size
+# limits can be combined; whichever limit is hit first wins.
+# Keep the size limit at ~80-85% of the underlying dataset/quota so
+# compaction has headroom — see docs/retention.md.
+global:
+  scrape_interval: {{ prometheus_scrape_interval }}
+  evaluation_interval: {{ prometheus_evaluation_interval }}
+{% if prometheus_external_labels | length > 0 %}
+  external_labels:
+{% for k, v in prometheus_external_labels.items() %}
+    {{ k }}: "{{ v }}"
+{% endfor %}
+{% endif %}
+
+storage:
+  tsdb:
+    retention:
+      time: {{ prometheus_retention_time | default('90d') }}
+      size: {{ prometheus_retention_size | default('16GB') }}
+
+rule_files:
+  - {{ prometheus_config_dir }}/rules.d/*.yml
+
+scrape_configs:
+  # Self — include first; the stack is somewhat self-monitoring
+  # (prometheus_tsdb_*, prometheus_series, prometheus_target_scrape_*).
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+        labels:
+          role: self
+{% for job in prometheus_scrape_configs %}
+{% set tl = job.target_labels | default({}) %}
+{% set plain = (job.targets | default([])) | reject('in', tl.keys() | list) | list %}
+{% set per_target = tl | dict2items %}
+  - job_name: {{ job.job }}
+    metrics_path: {{ job.metrics_path | default('/metrics') }}
+    scheme: {{ job.scheme | default('http') }}
+    static_configs:
+{% if plain | length > 0 %}
+      - targets:
+{% for t in plain %}
+          - "{{ t }}"
+{% endfor %}
+{% if job.labels | default({}) | length > 0 %}
+        labels:
+{% for k, v in (job.labels | default({})).items() %}
+          {{ k }}: "{{ v }}"
+{% endfor %}
+{% endif %}
+{% endif %}
+{% for e in per_target %}
+      - targets:
+          - "{{ e.key }}"
+        labels:
+{% for k, v in (job.labels | default({}) | combine(e.value)).items() %}
+          {{ k }}: "{{ v }}"
+{% endfor %}
+{% endfor %}
+{% if job.params | default({}) | length > 0 %}
+    # Prometheus params: each value renders as a list of strings. The
+    # inventory contract is: a STRING (rendered as a single-value list) or a
+    # LIST OF STRINGS. Integers/bools/dicts are rejected by the role's
+    # validation task (wrap scalars in quotes: node: "1").
+    params:
+{% for k, v in (job.params | default({})).items() %}
+      {{ k }}:
+{% if v is string %}
+        - "{{ v }}"
+{% else %}
+{% for val in v %}
+        - "{{ val }}"
+{% endfor %}
+{% endif %}
+{% endfor %}
+{% endif %}
+{% if job.tls_insecure_skip_verify | default(false) %}
+    tls_config:
+      insecure_skip_verify: true
+{% endif %}
+{% if job.basic_auth_user is defined %}
+    basic_auth:
+      username: {{ job.basic_auth_user }}
+      password: {{ job.basic_auth_pass | default('') }}
+{% endif %}
+{% endfor %}

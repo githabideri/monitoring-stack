@@ -1,0 +1,26 @@
+[Unit]
+Description=Grafana
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User={{ grafana_user }}
+Group={{ grafana_group }}
+Type=simple
+EnvironmentFile={{ grafana_config_dir }}/grafana.env
+Environment=HOME={{ grafana_home }}
+# Grafana >= 10.4: use the `grafana server` subcommand (the bare bin/grafana
+# is the CLI and rejects --config). 11.x renamed --config-overrides to
+# --configOverrides; our grafana.ini is the complete config, so omit it.
+ExecStart={{ grafana_install_dir }}/bin/grafana server \
+  --config {{ grafana_config_dir }}/grafana.ini \
+  --homepath {{ grafana_install_dir }}
+WorkingDirectory={{ grafana_install_dir }}
+Restart=on-failure
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

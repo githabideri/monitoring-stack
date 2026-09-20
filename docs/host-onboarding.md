@@ -1,0 +1,99 @@
+# Host onboarding
+
+Adding a new host to the monitoring stack is three steps: inventory
+entry, exporter deploy, scrape target. Everything else (dashboards,
+recording rules) picks the host up automatically because it queries by
+label, not by hardcoded instance list.
+
+## 1. Add to the site inventory
+
+```ini
+[node_exporter_servers]
+newhost.example.lan ansible_host=10.0.0.X ansible_user=...
+```
+
+Give it any site labels you need (e.g. `site: main` via
+`prometheus_external_labels` or per-job labels).
+
+## 2. Deploy node_exporter
+
+```bash
+ansible-playbook -i <site-inventory> monitoring.yml --limit newhost.example.lan
+```
+
+Per-host options (in the site inventory):
+
+- `node_exporter_extra_collectors: [zfs]` — enable the zfs collector on
+  ZFS hosts (reads `/proc/spl/kstat/zfs`)
+- `node_exporter_rootfs: /host` — only when the exporter runs in a
+  container and should see host filesystem metrics
+- `node_exporter_disable_collectors: [...]` — trim noisy collectors
+
+## 3. Add the scrape target
+
+In the Prometheus vars (site inventory), extend the `node-exporter`
+job's `targets` (or add a new job with an appropriate `role` label):
+
+```yaml
+- job: node-exporter
+  targets: ["10.0.0.X:9100"]
+  labels: { role: host }
+```
+
+Some exporters need URL params (e.g. pve-exporter's /pve endpoint:
+`params: {module: "<name>", target: "<pve-host:8006>", node: "1"}` /
+`{..., cluster: "1"}`). Contract: a param value must be a **string**
+(rendered as a single-value list) or a **list of strings** —
+integers, booleans and dicts are rejected by the role's validation task
+(wrap scalars in quotes: `node: "1"`), and a string is never split into
+characters.
+
+Re-run the prometheus role. Verify:
+
+```bash
+curl -s localhost:9090/api/v1/targets | jq '.data.activeTargets[] | select(.labels.instance=="10.0.0.X:9100") | {health, lastError}'
+curl -s "localhost:9090/api/v1/query?query=up{job=\"node-exporter\",instance=\"10.0.0.X:9100\"}"
+```
+
+## Other exporters
+
+- **PVE node** — add an entry to `pve_exporter_servers` in the
+  Prometheus LXC's vars (read-only token per node; the module name must
+  match the scrape job's `module` param, and the job's `target` param
+  must be `<pve-host:8006>`). No per-host installation; the central
+  exporter picks it up. **PVE 9 token recipe (verified on 9.2.3–9.2.11
+  and 8.4):** a token's effective permissions are the *intersection* of
+  its parent user's ACL and the token's own ACL (tokens default to
+  `privsep=1`), so **both** need the grant — a token-only ACL 403s on
+  everything non-trivial:
+
+  ```bash
+  pveum user add monitoring@pve --comment "central pve-exporter (read-only)"  # 8.4: pveum user add user "comment"
+  pveum user token add monitoring@pve scraper
+  pveum acl modify / --users  "monitoring@pve"          --roles PVEAuditor
+  pveum acl modify / --tokens "monitoring@pve!scraper" --roles PVEAuditor
+  ```
+
+  `PVEAuditor` on `/` (Sys.Audit + VM.Audit + Datastore.Audit) covers
+  everything the exporter reads: node status, guest status/config,
+  cluster resources/status. No broader role needed. If the PVE host is
+  only reachable over Tailscale, the job's `target` param is its Tailscale
+  address (the CT needs a route for `100.64.0.0/10` via a box whose own
+  tailscale0 can serve it, with MASQ — see the homelab overview for the
+  concrete setup).
+- **LLM endpoint** — add a job targeting `<host:port>/metrics`
+  (vLLM, llama.cpp, or the hub). The hub needs
+  `scheme: https` + `tls_insecure_skip_verify: true` for self-signed
+  certs.
+- **SBC / other service** — same pattern: exporter on the device, job
+  in the scrape config, `role` label set.
+
+## Verification
+
+After onboarding, confirm (in this order):
+
+1. exporter answers: `curl -s <host>:9100/metrics | head`
+2. target is healthy in Prometheus (`/api/v1/targets`)
+3. `up{instance="..."}` = 1 and recording rules evaluate
+   (`/api/v1/query?query=homelab:fs_used:ratio{instance="..."}`)
+4. host appears in Grafana Overview/Host Detail

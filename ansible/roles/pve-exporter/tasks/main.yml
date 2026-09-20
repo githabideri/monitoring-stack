@@ -1,0 +1,65 @@
+---
+- name: Ensure pve-exporter user
+  ansible.builtin.user:
+    name: "{{ pve_exporter_user }}"
+    system: true
+    shell: /usr/sbin/nologin
+    create_home: false
+
+- name: Ensure python3 venv tooling
+  ansible.builtin.package:
+    name:
+      - python3
+      - python3-venv
+      - python3-pip
+    state: present
+
+- name: Ensure directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ pve_exporter_user }}"
+    group: "{{ pve_exporter_user }}"
+    mode: "0750"
+  loop:
+    - "{{ pve_exporter_install_dir }}"
+    - "{{ pve_exporter_config_dir }}"
+
+- name: Create venv
+  ansible.builtin.command:
+    cmd: python3 -m venv {{ pve_exporter_install_dir }}/venv
+    creates: "{{ pve_exporter_install_dir }}/venv/bin/pip"
+
+- name: Install prometheus-pve-exporter
+  ansible.builtin.command:
+    cmd: "{{ pve_exporter_install_dir }}/venv/bin/pip install --upgrade prometheus-pve-exporter=={{ pve_exporter_version }}"
+    creates: "/tmp/.pve-exporter-{{ pve_exporter_version }}"
+  notify: restart pve_exporter
+
+- name: Mark installed
+  ansible.builtin.file:
+    path: "/tmp/.pve-exporter-{{ pve_exporter_version }}"
+    state: touch
+    mode: "0644"
+
+- name: Deploy pve.yml config
+  ansible.builtin.template:
+    src: pve.yml.j2
+    dest: "{{ pve_exporter_config_dir }}/pve.yml"
+    owner: "{{ pve_exporter_user }}"
+    group: "{{ pve_exporter_user }}"
+    mode: "0640"
+  notify: restart pve_exporter
+
+- name: Deploy systemd unit
+  ansible.builtin.template:
+    src: pve_exporter.service.j2
+    dest: /etc/systemd/system/pve_exporter.service
+    mode: "0644"
+  notify: restart pve_exporter
+
+- name: Enable and start
+  ansible.builtin.systemd:
+    name: pve_exporter
+    state: started
+    enabled: true

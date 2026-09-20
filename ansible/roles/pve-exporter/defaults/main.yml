@@ -1,0 +1,30 @@
+---
+# prometheus-pve-exporter (python, pip). One central instance can query
+# every PVE node; scrape node metrics from each node and cluster metrics
+# from a single node (via scrape url params node=1 / cluster=1).
+#
+# Use READ-ONLY credentials (PVEAuditor role per PVE host).
+# See docs/architecture.md (Security).
+pve_exporter_version: "3.10.0"
+pve_exporter_install_dir: /opt/pve-exporter
+pve_exporter_user: pve-exporter
+pve_exporter_listen_address: "0.0.0.0:9221"
+pve_exporter_config_dir: /etc/pve-exporter
+
+# pve.yml modules (prometheus-pve-exporter 3.x). Each module is a
+# standalone PVE entry with its own credentials. Keys per entry:
+# user, token_name, token_value, verify_ssl (bool). There is no
+# "default" merge in 3.x — write every module in full. The PVE API
+# host is NOT in this config; it goes into the Prometheus scrape job
+# as the `target` param of the /pve endpoint ("host:8006").
+#
+# Example:
+#   pve_exporter_servers:
+#     <pve-host>:
+#       user: "monitoring@pve"
+#       token_name: "scraper"
+#       token_value: "<uuid>"
+pve_exporter_servers: {}
+
+# PVE API uses self-signed certs on most homelab setups
+pve_exporter_verify_ssl: false

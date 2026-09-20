@@ -1,0 +1,20 @@
+[Unit]
+Description=Prometheus PVE Exporter (central)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User={{ pve_exporter_user }}
+Group={{ pve_exporter_user }}
+Type=simple
+ExecStart={{ pve_exporter_install_dir }}/venv/bin/pve_exporter \
+  --config.file={{ pve_exporter_config_dir }}/pve.yml \
+  --web.listen-address={{ pve_exporter_listen_address }}
+Restart=on-failure
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,41 @@
+---
+grafana_version: "11.6.0"
+grafana_arch: amd64
+grafana_download_sha256: ""
+
+grafana_user: grafana
+grafana_group: grafana
+grafana_install_dir: /usr/lib/grafana
+grafana_home: /var/lib/grafana
+grafana_config_dir: /etc/grafana
+grafana_dashboard_dir: /var/lib/grafana/dashboards
+
+# REQUIRED by the site playbook (never commit real passwords)
+grafana_admin_password: ""
+
+# Datasource
+grafana_prometheus_name: Prometheus
+# Intra-fleet address of the Prometheus LXC, e.g. "http://PROMETHEUS-ADDR:9090"
+grafana_prometheus_url: "http://localhost:9090"
+
+# Dashboard JSON files to deploy (paths on the control node)
+grafana_dashboard_files: []
+
+# Site-name overlay for dashboard display strings. The repo keeps neutral
+# tokens so no site names are committed; the site playbook substitutes the
+# real names at deploy time. Generic defaults keep this repo usable
+# standalone.
+grafana_dashboard_site_map:
+  "@@SITE_MAIN@@": "Main"
+  "@@SITE_OFFSITE@@": "Offsite"
+
+grafana_http_port: 3000
+
+# Which provisioned dashboard is the org home (login landing page).
+# Set to "" to fall back to Grafana's default welcome page.
+grafana_default_home_dashboard: "homelab-overview.json"
+
+# Canonical EXTERNAL url when behind a reverse proxy (NPM, ...). Leave empty
+# for direct-access installs. Set to e.g. "https://grafana-ui.example.lan/"
+# (proxy domain, no port) so login redirects/assets resolve through the proxy.
+grafana_root_url: ""

@@ -1,0 +1,17 @@
+# prometheus-pve-exporter config.
+#
+# IMPORTANT (v3.x): every module is standalone — there is no "default"
+# merge. Each module needs its own credentials, and the PVE API host is
+# NOT part of the config: the exporter's data endpoint is
+#   /pve?module=<name>&target=<host:8006>&cluster=<0|1>&node=<0|1>
+# so the target is supplied per scrape job in the Prometheus scrape
+# config (`params: {module: ..., target: ..., cluster: ..., node: ...}`).
+#
+# `target` must include the PVE API port (8006).
+{% for name, entry in (pve_exporter_servers | default({})).items() %}
+{{ name }}:
+  user: {{ entry.user | default('monitoring@pve') }}
+  token_name: {{ entry.token_name | default('scraper') }}
+  token_value: "{{ entry.token_value | default('') }}"
+  verify_ssl: {{ entry.verify_ssl | default(pve_exporter_verify_ssl) }}
+{% endfor %}

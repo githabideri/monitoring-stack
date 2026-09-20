@@ -1,0 +1,27 @@
+---
+# Example playbook for the monitoring-stack roles.
+# The site playbook in your private repo is the deployment authority;
+# this file shows the shape.
+#
+#   ansible-playbook -i <site-inventory> playbook.yml
+
+- name: Deploy Prometheus (LXC)
+  hosts: prometheus_servers
+  become: true
+  roles:
+    - role: prometheus
+    # The central exporters live inside the Prometheus LXC:
+    - role: pve-exporter
+    - role: pbs-exporter
+
+- name: Deploy Grafana (LXC)
+  hosts: grafana_servers
+  become: true
+  roles:
+    - grafana
+
+- name: Deploy node_exporter on monitored hosts
+  hosts: node_exporter_servers
+  become: true
+  roles:
+    - node-exporter

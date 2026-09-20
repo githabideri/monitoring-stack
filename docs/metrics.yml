@@ -1,0 +1,422 @@
+# Metrics Catalog — the contract between exporters, recording rules, and
+# dashboards/agents. Metric names and label shapes were audited against
+# the live Prometheus on 2026-09-06. Absence of a listed metric is a
+# regression ONLY where the entry's semantics say it should be present
+# continuously (up, node_* identity metrics, exporter health gauges);
+# activity-gated and engine/feature-specific metrics are legitimately
+# absent — each such entry says so in its zero/absent note.
+#
+# Kinds: gauge (point-in-time), counter (monotonic — always use
+# rate/irate/delta), info (presence/label carrier, value usually 1).
+#
+# "Zero/absent" semantics: zero = the value was measured and is zero.
+# absent = the series does not exist (no data, no conclusion). Dashboards
+# must never draw an absent series as a flat zero line.
+
+meta:
+  prometheus: the Prometheus LXC, http://PROM:9090, no auth (LAN/TS only)
+  grafana: the Grafana LXC (behind the site's reverse proxy; the datasource points at the Prometheus LXC), datasource uid prometheus-homelab
+  recording_rules: "prometheus/rules/homelab.rules.yml (groups: homelab.hosts, homelab.storage, homelab.pbs, homelab.llm, homelab.services, homelab.tailnet)"
+  dashboard_contract: docs/dashboard-design.md
+
+# ---------------------------------------------------------------- raw: hosts
+raw_hosts:
+  up:
+    kind: gauge
+    labels: [instance, job]
+    semantics: "1 = scraped OK, 0 = scrape failed. The one metric every panel can trust."
+  node_uname_info:
+    kind: info
+    labels: [system, release, version, machine]
+    note: "host identity (e.g. system='GNU/Linux', release='7.0.14-4-pve')"
+  node_os_info:
+    kind: info
+    labels: [family, id]
+  node_load1 / node_load5:
+    kind: gauge
+  node_cpu_seconds_total:
+    kind: counter
+    labels: [cpu, mode]
+    modes: [user, system, idle, iowait, irq, softirq, steal, nice]
+    note: "busy% = 100 - avg(rate(...{mode=\"idle\"}))*100"
+  node_pressure_cpu_waiting_seconds_total:
+    kind: counter
+    unit: s
+    note: "PSI waiting = processes delayed on the resource (real stalls); stalled = all parallel tasks blocked (worse). No irq metric in this build."
+  node_pressure_memory_waiting_seconds_total:
+    kind: counter
+  node_pressure_io_waiting_seconds_total:
+    kind: counter
+  node_memory_MemTotal_bytes:
+    kind: gauge
+  node_memory_MemAvailable_bytes:
+    kind: gauge
+    note: "mem_used = 1 - Available/Total (cgroup-style; correct on hosts where ZFS ARC shares the RAM)"
+  node_memory_SwapTotal_bytes:
+    kind: gauge
+    note: "Both Swap metrics are omitted entirely when no swap device exists — the rule handles that (explicit 0, never NaN)."
+  node_memory_SwapFree_bytes:
+    kind: gauge
+  node_filesystem_size_bytes:
+    kind: gauge
+    labels: [device, mountpoint, fstype]
+  node_filesystem_avail_bytes:
+    kind: gauge
+    note: "avail (not free): space available to unprivileged users."
+  node_filesystem_files / node_filesystem_files_free:
+    kind: gauge
+  node_disk_read_bytes_total / node_disk_written_bytes_total:
+    kind: counter
+    unit: bytes
+    labels: [device]
+  node_disk_io_time_seconds_total:
+    kind: counter
+    note: "IO busy% = rate(...[5m]) (0..1)"
+  node_disk_io_now:
+    kind: gauge
+  node_network_receive_bytes_total / node_network_transmit_bytes_total:
+    kind: counter
+    unit: bytes
+    labels: [device]
+  node_network_up:
+    kind: gauge
+
+raw_zfs:
+  node_zfs_arc_size:
+    kind: gauge
+    unit: bytes
+  node_zfs_arc_c:
+    kind: gauge
+    unit: bytes
+    note: "ARC LRU list size (what actually holds cache)"
+  node_zfs_arc_c_max / node_zfs_arc_c_min:
+    kind: gauge
+    unit: bytes
+  node_zfs_arc_hdr_size:
+    kind: gauge
+    unit: bytes
+  node_zfs_arc_hits / node_zfs_arc_misses:
+    kind: counter
+    note: "hit ratio over a window; gated by the recording rule"
+  node_zfs_arc_data_size / node_zfs_arc_metadata_size / node_zfs_arc_compressed_size:
+    kind: gauge
+    unit: bytes
+  node_zfs_arc_mfu_hits / node_zfs_arc_mru_hits:
+    kind: counter
+  # NOTE: this node_exporter build exports NO node_zfs_arc_read/write
+  # counters (verified 2026-09-06). Storage I/O bandwidth = node_disk_*.
+  # A flat-zero ARC I/O panel is a bug, not "no I/O".
+  node_zfs_zpool_dataset_nread / node_zfs_zpool_dataset_nwritten:
+    kind: counter
+    labels: [pool, dataset]
+    note: "per-dataset sector ops; rate() for IOPS"
+  node_zfs_zpool_dataset_reads / node_zfs_zpool_dataset_writes:
+    kind: counter
+  node_zfs_zpool_dataset_needcopy_bytes:
+    kind: gauge
+    unit: bytes
+    note: "ZFS copy-on-write pending"
+  node_zfs_zpool_state:
+    kind: gauge
+    note: "1 = ONLINE (0 OFFLINE, 2 DEGRADED, 3 FAULTED, ...)"
+
+raw_pve:
+  # Central pve-exporter 3.10, running inside the Prometheus LXC. DATA endpoint is /pve
+  # with query params module/target/cluster/node; /metrics is self only:
+  #   pve_last_scrape_error_message, pve_last_scrape_success_timestamp_seconds,
+  #   pve_request_errors_total, pve_scrapes_total, pve_scrape_duration_seconds
+  # (all carry module=... — watch this for collector health).
+  # PVE 9 pveum gotcha: API tokens default to privsep=1 (separate ACL set).
+  # Grant the token itself: pveum acl modify / -token 'user@pve!name' -role PVEAuditor.
+  pve_node_info:
+    kind: info
+    labels: [name, nodeid, role]
+  pve_guest_info:
+    kind: info
+    labels: [id, name, node, type, template]
+    id_format: "lxc/<vmid> or qemu/<vmid>"
+  pve_up:
+    kind: gauge
+  pve_cpu_usage_ratio:
+    kind: gauge
+    note: "0..1 of the guest's CPU allotment"
+  pve_cpu_usage_limit:
+    kind: gauge
+    note: "0 = unlimited"
+  pve_memory_size_bytes / pve_memory_usage_bytes:
+    kind: gauge
+  pve_disk_size_bytes / pve_disk_usage_bytes:
+    kind: gauge
+  pve_network_receive_bytes_total / pve_network_transmit_bytes_total:
+    kind: counter
+  pve_uptime_seconds:
+    kind: gauge
+    unit: s
+  pve_not_backed_up_info / pve_not_backed_up_total:
+    kind: info
+    note: "guests with no live-backup job"
+  pve_ha_state / pve_lock_state / pve_onboot_status:
+    kind: gauge
+    note: "HA state, lock (0 = none), on-boot (1 = autostart)"
+  pve_subscription_status / pve_subscription_info:
+    kind: gauge / info
+  pve_version_info:
+    kind: info
+    note: "PVE version per node"
+  pve_storage_info / pve_storage_shared:
+    kind: info / gauge
+
+raw_pbs:
+  # Central pbs-exporter (natrontech) against PBS 3.3 on the Proxmox Backup Server.
+  pbs_up:
+    kind: gauge
+    note: >-
+      KNOWN FALSE NEGATIVE — the exporter's liveness probe hits
+      /api2/json/nodes, which a read-only DatastoreAudit token gets 403 on in
+      PBS 3.x (never has since day one). Do not alert on pbs_up==0; use
+      pbs_api_up (pbs-up-probe job) for liveness and data freshness for health.
+  pbs_size / pbs_used / pbs_available:
+    kind: gauge
+    unit: bytes
+    labels: [datastore]
+  pbs_snapshot_count:
+    kind: gauge
+    labels: [datastore]
+  pbs_snapshot_vm_count:
+    kind: gauge
+    labels: [datastore, namespace, vm_id, vm_name]
+    note: "one series per guest ever backed up. namespace = source host name (one per backed-up host); decommissioned hosts leave their historical namespace behind (see the Backups dashboard)."
+  pbs_api_up:
+    kind: gauge
+    source: pbs-up-probe (same CT, :10020; probes /api2/json/version, which the read-only token may access)
+    note: "the real liveness bit. pbs_up (pbs-exporter) is a documented false negative — see above."
+  pbs_probe_seconds:
+    kind: gauge
+    unit: seconds
+    source: pbs-up-probe
+  pbs_version_info:
+    kind: gauge
+    labels: [version]
+    source: pbs-up-probe
+    note: "supersedes pbs_version (pbs-exporter) as the freshest version source."
+  pbs_snapshot_vm_last_timestamp:
+    kind: gauge
+    unit: unix_seconds
+    note: "0 = never backed up. age = time() - value."
+  pbs_snapshot_vm_last_verify:
+    kind: gauge
+    note: "1 = verified, 0 = never/failed. NOT a timestamp."
+  pbs_job_status / pbs_job_heartbeat:
+    kind: gauge
+    note: "full-backup job state / heartbeat"
+  pbs_storage_job_queue_size:
+    kind: gauge
+  pbs_storage_job_last_success / pbs_storage_job_last_attempt:
+    kind: gauge
+    unit: unix_seconds
+  pbs_storage_job_duration:
+    kind: gauge
+    unit: s
+
+raw_llm:
+  # LLM hub sidecars (see llmlab hub/). One hub per server (server label),
+  # per-model (model label). Raw vLLM/llama.cpp are also scraped directly
+  # (raw_vllm below) — the hub is the normalizer, the raw series are the
+  # fallback when the hub's parse of an engine fails.
+  hub_server_online:
+    kind: gauge
+  hub_server_gpus_stale / hub_server_gpu_count:
+    kind: gauge
+    note: "gpus_stale=1 means the box's GPU sidecar is unreachable (host off/down/wedged). The hub then DROPS the per-GPU point gauges below (absent = no live observation) instead of re-emitting the last sample — never read a flat last-seen value as current while gpus_stale=1. A server with no sidecar configured at all is also immediately flagged stale, not silent."
+  hub_model_loaded:
+    kind: gauge
+  hub_vllm_metrics_ok:
+    kind: gauge
+    note: "vLLM models only. 1 = hub parsed the engine's /metrics, 0 = parse failed (that model's hub_model_* queue/kv/latency series are then ABSENT — fall back to raw vllm:*, which the recording rules do automatically)."
+  hub_model_tokens_per_second:
+    kind: gauge
+    note: "decode throughput of active generation"
+  hub_model_prompt_tokens_per_second:
+    kind: gauge
+    note: "llama.cpp: computed prompt tokens divided by the child's own prompt clock (prompt seconds total; the per-prefill gauge is the fallback) — cached prompt tokens are EXCLUDED (they live in hub_model_prompt_cache_hit) and a prefill landing in one poll interval divides by its real processing time, not the poll gap. vLLM: computed (non-cached) prompt tokens per wall clock."
+  hub_model_requests_waiting / hub_model_requests_running:
+    kind: gauge
+    note: "vLLM-side names. Can be absent when the hub parse fails."
+  hub_model_requests_processing / hub_model_requests_deferred:
+    kind: gauge
+    note: "llama.cpp-side names (processing = active, deferred = queued)"
+  hub_model_kv_cache_used:
+    kind: gauge
+    unit: ratio (hub normalizes 0..100 builds to 0..1)
+    note: "vLLM only. May be ABSENT when the hub's parse for that engine fails (hub_vllm_metrics_ok == 0) — then raw vllm:kv_cache_usage_perc is the live source (the recording rule tags it kv_source=vllm-raw)."
+  hub_model_prefix_cache_hit / hub_model_prompt_cache_hit:
+    kind: gauge
+    note: "vLLM vs llama.cpp cache-hit ratios (0..1)"
+  hub_model_spec_acceptance:
+    kind: gauge
+    note: "MTP/speculative acceptance (0..1)"
+  hub_model_ttft_p95_seconds / hub_model_tpot_p95_seconds / hub_model_e2e_p95_seconds / hub_model_queue_p95_seconds:
+    kind: gauge
+    unit: s
+    note: "hub-computed percentiles over a rolling window of completed requests; may be absent between requests (real 'no observation')"
+  hub_model_preemptions_total / hub_model_preemptions_window:
+    kind: counter / gauge
+  hub_model_finish_total_window / hub_model_finish_length_window / hub_model_finish_abort_window:
+    kind: gauge
+  hub_model_engine_asleep:
+    kind: gauge
+    note: "vLLM sleep-mode"
+  hub_model_busy_slots:
+    kind: gauge
+    note: "llama.cpp router"
+  hub_gpu_utilization_pct / hub_gpu_temp_c / hub_gpu_power_w:
+    kind: gauge
+    labels: [gpu]
+    note: "Emit only while the sidecar is fresh (hub_server_gpus_stale==0); absent when stale — a gap, not a zero."
+  hub_gpu_memory_used_mib / hub_gpu_memory_total_mib:
+    kind: gauge
+    unit: MiB
+
+raw_vllm:
+  # vLLM's own /metrics (the inference server's :8080), scraped directly.
+  # Instance-labeled only (no server/model) — joins with hub data are by
+  # human knowledge, not by label.
+  vllm:num_requests_waiting / vllm:num_requests_running:
+    kind: gauge
+  vllm:kv_cache_usage_perc:
+    kind: gauge
+    note: "0..1 — the vLLM KV gauge"
+  vllm:inter_token_latency_seconds / vllm:e2e_request_latency_seconds:
+    kind: histogram
+    note: "use histogram_quantile(0.95, sum by (le) (rate(...[5m])))"
+  vllm:num_preemptions_total:
+    kind: counter
+  vllm:generation_tokens_total / vllm:prompt_tokens_total:
+    kind: counter
+  vllm:prefix_cache_hits_total / vllm:prefix_cache_queries_total:
+    kind: counter
+  vllm:engine_sleep_state:
+    kind: gauge
+
+raw_prometheus:
+  # Prometheus 3.14 self-metrics (job=prometheus-self). Note: v3 renamed
+  # the 2.x names — there is NO prometheus_tsdb_storage_bytes (use
+  # storage_blocks_bytes + head_chunks_storage_size_bytes + wal) and NO
+  # prometheus_local_storage_data_total_series (use tsdb_head_series).
+  prometheus_tsdb_storage_blocks_bytes / prometheus_tsdb_head_chunks_storage_size_bytes:
+    kind: gauge
+    unit: bytes
+    note: "blocks on disk + in-memory head. Sum = current TSDB footprint (16 GiB retention guard)."
+  prometheus_tsdb_wal_storage_size_bytes:
+    kind: gauge
+    unit: bytes
+  prometheus_tsdb_retention_limit_bytes / prometheus_tsdb_retention_limit_seconds:
+    kind: gauge
+  prometheus_tsdb_head_series / prometheus_tsdb_blocks_loaded:
+    kind: gauge
+  prometheus_target_scrape_pool_targets:
+    kind: gauge
+    labels: [scrape_job, health]
+  prometheus_target_scrape_duration_seconds:
+    kind: summary
+  prometheus_http_requests_total:
+    kind: counter
+    labels: [code, handler]
+  prometheus_rule_evaluation_failures_total / prometheus_rule_evaluation_duration_seconds:
+    kind: counter / summary
+
+# ---------------------------------------------------------------- raw: tailnet
+# Tailnet health gauges. Written by the tailscale-metrics scripts (deployed
+# from the private homelab repo, configs/tailscale/) into node_exporter's
+# textfile collector on the PVE hosts: one host runs the whole-tailnet vantage
+# (its `tailscale status --json` sees every peer), the designated
+# advertisers run a self-report. Subnet labels carry NAMES (main-lan,
+# offsite-lan, vps-lan-*), never CIDRs, so the public repo can document
+# them safely. Refresh ~2 min.
+#
+# Zero/absent: a 0 is an OBSERVATION (checked, not the case). A missing
+# series means the check itself is not running (host down, script dead) —
+# that is what homelab:tailscale_check_fresh makes visible.
+raw_tailnet:
+  tailscale_route_advertised:
+    kind: gauge
+    labels: [subnet, host]
+    semantics: "1 = the designated router for that subnet is online AND advertising it (the vantage's whole-tailnet view); 0 = down or not advertising. One series per designated router. The subnet is NAMED, not a CIDR."
+  tailscale_peer_online:
+    kind: gauge
+    labels: [host]
+    semantics: "1 = tailnet peer online (watch list: PVE hosts + key service nodes); 0 = offline. A 0 is an observation, not absence."
+  tailscale_route_drift_total:
+    kind: gauge
+    semantics: "current count of allowlist drift entries (unexpected advertiser, offline-while-advertising, missing required router). 0 = clean."
+  tailscale_route_drift:
+    kind: info
+    labels: [kind, host, subnet]
+    semantics: "one series (value 1) per current drift entry; absent when that entry is gone."
+  tailscale_route_drift_check_ts:
+    kind: gauge
+    unit: unix_seconds
+    semantics: "unix ts of the last check run. Goes stale (drops out of queries) 5 min after the check stops; that is how homelab:tailscale_check_fresh detects a dead check. The 1-min vantage watcher turns a dead check into an explicit tailscale_check_dead=1 (a textfile is re-scraped as fresh forever, so mtime staleness alone would never surface)."
+  tailscale_check_dead:
+    kind: gauge
+    emitted_by: "the vantage's 1-min watcher, not the check itself"
+    semantics: "1 = the drift check has not written for >5 min (timer dead, script crash-loop, host wedged). The composites drop out with it. Absent = the check is alive. A positive red — never a silent flat line."
+  tailscale_route_advertised_local:
+    kind: gauge
+    labels: [subnet]
+    emitted_by: "the designated router itself (advertiser self-report; the scrape job adds host/instance labels)"
+    semantics: "1 = this node advertises the named subnet right now (Self.PrimaryRoutes). The local half of the offsite composite — it stays 1 even if the vantage is blind."
+  tailscale_ip_forward_enabled:
+    kind: gauge
+    emitted_by: "the vantage (its own IP forwarding — it is the main-site router)"
+    semantics: "1 = /proc/sys/net/ipv4/ip_forward is on. A subnet router without it blackholes everything it routes."
+  tailscale_ip_forward_enabled_local:
+    kind: gauge
+    labels: [subnet]
+    emitted_by: "the designated router itself (advertiser self-report)"
+    semantics: "same as tailscale_ip_forward_enabled but on the advertised LAN's own router — the offsite composite's local leg."
+  tailscaled_active:
+    kind: gauge
+    semantics: "1 = the local tailscaled daemon reports BackendState=Running (advertiser self-report)."
+  tailscale_self_metrics_ts:
+    kind: gauge
+    unit: unix_seconds
+    semantics: "unix ts of the last self-report run (stale-detection, same pattern as the vantage check)."
+
+# ------------------------------------------------------- recording rules
+# Verified live 2026-09-06. Rules are the machine-facing layer: agents
+# query these, dashboards prefer these, raw metrics are the fallback.
+recording_rules:
+  "homelab:cpu_util:avg5m": {unit: percent (0..100), expr: "100 - avg(rate(idle))"}
+  "homelab:load_per_core": {unit: load/core, expr: "node_load5 / core count"}
+  "homelab:mem_used:ratio": {unit: ratio, expr: "1 - Available/Total"}
+  "homelab:swap_used:ratio": {unit: ratio, expr: "(1 - Free/Total) * (Total>0); explicit 0 on hosts without swap"}
+  "homelab:fs_used:ratio": {unit: ratio, expr: "1 - avail/size, real fstypes only, zero-size pseudo-fs -> explicit 0"}
+  "homelab:fs_free:bytes": {unit: bytes}
+  "homelab:fs_inodes:ratio": {unit: ratio, expr: "1 - files_free/files, real fstypes, and-gated"}
+  "homelab:zfs_arc_hit:ratio": {unit: ratio, expr: "5m rate hits/(hits+misses), both-rate-gated (absent on idle)"}
+  "homelab:disk_io_util": {unit: ratio, expr: "rate(node_disk_io_time_seconds_total[5m])"}
+  "homelab:pbs_datastore_used:ratio": {unit: ratio, expr: "pbs_used / pbs_size"}
+  "homelab:backup_age_seconds": {unit: s, expr: "time() - pbs_snapshot_vm_last_timestamp (0 for never-backed-up guests!)"}
+  "homelab:backup_verified": {unit: bool, expr: "pbs_snapshot_vm_last_verify (1 = verified)"}
+  "homelab:llm_kv_used:ratio": {unit: ratio, expr: "hub kv (0..1) or raw vllm:kv_cache_usage_perc (kv_source tag)"}
+  "homelab:llm_queue:sum": {unit: count, expr: "waiting or deferred, per model; raw vllm fallback (queue_source tag)"}
+  "homelab:llm_running:sum": {unit: count, expr: "running or processing, per engine; raw vllm fallback (running_source tag)"}
+  "homelab:llm_ttft:seconds": {unit: s, expr: "hub p95 or raw vllm ttft histogram p95; absent between requests"}
+  "homelab:llm_tpot:seconds": {unit: s, expr: "hub p95 or raw vllm inter_token/tpot p95"}
+  "homelab:llm_e2e:seconds": {unit: s, expr: "hub p95 or raw vllm e2e p95"}
+  "homelab:llm_preemptions:rate": {unit: rate/s, expr: "rate(hub preemptions_total[5m]) or rate(raw vllm[15m])"}
+  "homelab:llm_tokens_per_second": {unit: tok/s, expr: "hub decode t/s per model"}
+  "homelab:llm_prompt_per_second": {unit: tok/s, expr: "hub prefill t/s per model"}
+  "homelab:gpu_utilization": {unit: percent (0..100), expr: "avg hub gpu pct by (server, gpu)"}
+  "homelab:llm_prefix_cache_hit:ratio": {unit: ratio, expr: "hub prefix or prompt cache hit, per model"}
+  "homelab:service_up": {unit: bool, expr: "up (stable name for agents)"}
+  "homelab:tailscale_route_up": {unit: bool, expr: "max by (subnet) of the vantage gauge — designated router online AND advertising"}
+  "homelab:tailscale_route_advertisers": {unit: count, expr: "healthy designated routers per subnet (0 = nobody routes that LAN)"}
+  "homelab:tailscale_drift_total": {unit: count, expr: "allowlist drift count (0 = clean)"}
+  "homelab:tailscale_check_fresh": {unit: bool, expr: "max(check ts) > bool 0 — the check's sample is inside the 5-min staleness window (1 = alive; ABSENT = dead > 5 min)"}
+  "homelab:tailscale_offsite_healthy": {unit: bool, expr: "product of 4 legs: route up (vantage) × the offsite router's self-reported advertisement × its self-reported IP forwarding × check fresh. 0 = any leg broken; absent = a leg produced no data. THE question-first answer for 'can I reach the offsite LAN'."}
+  "homelab:tailscale_main_healthy": {unit: bool, expr: "route up (vantage, which is the main-site router) × vantage IP forwarding × check fresh"}
+# Deliberately NOT rules (query raw in panels): hub_vllm_metrics_ok
+# (parse-health flag per vLLM model), pve_* (small cardinality, labels
+# speak for themselves), prometheus_* self-metrics.

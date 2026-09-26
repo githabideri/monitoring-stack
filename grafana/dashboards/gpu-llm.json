@@ -128,7 +128,7 @@
         "type": "prometheus",
         "uid": "prometheus-homelab"
       },
-      "description": "Count of vLLM engines with KV-cache data in the pipeline. 1 each, whether via the hub or the raw vllm: fallback (kv_source=vllm-raw). 0 with a loaded vLLM model = both sources dead \u2014 latency/KV panels are blind for that engine.",
+      "description": "Count of vLLM engines with KV-cache data in the pipeline. 1 each, whether via the hub or the raw vllm: fallback (kv_source=vllm-raw). 0 with a loaded vLLM model = both sources dead — latency/KV panels are blind for that engine.",
       "fieldConfig": {
         "defaults": {
           "unit": "short",
@@ -244,7 +244,7 @@
         "type": "prometheus",
         "uid": "prometheus-homelab"
       },
-      "description": "Prefill throughput per model \u2014 prompt processing capacity.",
+      "description": "Prefill throughput per model — prompt processing capacity.",
       "fieldConfig": {
         "defaults": {
           "unit": "short",
@@ -353,7 +353,7 @@
         "type": "prometheus",
         "uid": "prometheus-homelab"
       },
-      "description": "Per-token latency (decode speed experienced by the user). 50ms \u2248 20 tok/s.",
+      "description": "Per-token latency (decode speed experienced by the user). 50ms ≈ 20 tok/s.",
       "fieldConfig": {
         "defaults": {
           "unit": "ms",
@@ -454,7 +454,7 @@
       },
       "id": 603,
       "panels": [],
-      "title": "Pressure \u2014 queue, KV cache, preemptions",
+      "title": "Pressure — queue, KV cache, preemptions",
       "type": "row"
     },
     {
@@ -587,7 +587,7 @@
         "type": "prometheus",
         "uid": "prometheus-homelab"
       },
-      "description": "Preemptions per second. Any sustained non-zero = requests being evicted from KV and restarted \u2014 the engine is oversubscribed.",
+      "description": "Preemptions per second. Any sustained non-zero = requests being evicted from KV and restarted — the engine is oversubscribed.",
       "fieldConfig": {
         "defaults": {
           "unit": "ops",
@@ -797,6 +797,237 @@
         }
       ],
       "title": "Prefix/prompt cache hit (%)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": null,
+      "collapsable": true,
+      "panels": [],
+      "title": "Polis decider (reflex, on-demand)",
+      "type": "row",
+      "id": 700,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 65
+      },
+      "collapsed": false
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-homelab"
+      },
+      "description": "The fine-tuned Decider 2B (Polis bot reflex layer) loaded on the on-demand card. 0 = not loaded: the first readout after a model switch waits for the load (tens of seconds); the judge tier covers that window.",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 0,
+        "y": 66
+      },
+      "id": 701,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus-homelab"
+          },
+          "expr": "max(hub_model_loaded{model=~\"qwen35-decider-2b(-ft)?\"})",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Is the reflex loaded?",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-homelab"
+      },
+      "description": "The hub can read the engine's per-model metrics for the decider(s). 0 while nothing is loaded is expected; it must return to 1 shortly after a load.",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 0,
+        "y": 66
+      },
+      "id": 702,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus-homelab"
+          },
+          "expr": "max(hub_llama_metrics_ok{model=~\"qwen35-decider-2b(-ft)?\"})",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Decider metrics feed healthy?",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-homelab"
+      },
+      "description": "How many of the fleet's 35B thinking-model slots are loaded (reflex card by default, nightly backup box in its window). The reflex card evicts the 35B while the decider is resident - on-demand by design; the first 35B request restores it.",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 0,
+        "y": 66
+      },
+      "id": 703,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus-homelab"
+          },
+          "expr": "count(hub_model_loaded{model=\"qwen36-35b-mtp\"} == 1)",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "title": "35B slots loaded (fleet)",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-homelab"
+      },
+      "description": "Bursty by nature: a mission step issues one short readout every few seconds. Sustained non-zero means something is hammering the reflex.",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 70
+      },
+      "id": 704,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus-homelab"
+          },
+          "expr": "hub_model_requests_processing{model=~\"qwen35-decider-2b(-ft)?\"}",
+          "legendFormat": "{{model}} processing",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus-homelab"
+          },
+          "expr": "hub_model_requests_deferred{model=~\"qwen35-decider-2b(-ft)?\"}",
+          "legendFormat": "{{model}} deferred",
+          "refId": "B"
+        }
+      ],
+      "title": "Decider load: requests processing / deferred",
       "type": "timeseries"
     }
   ],

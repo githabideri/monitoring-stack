@@ -113,7 +113,13 @@ homelab:llm_prefix_cache_hit:ratio
 
 # Generation / prompt throughput (tok/s)
 homelab:llm_tokens_per_second
-hub_model_prompt_tokens_per_second
+# prompt rate per model — llama.cpp child-clock rate OR vLLM rate() of the
+# hub's computed-token counter (two different quantities, one series; the
+# vLLM PERFORMANCE figure is hub_model_prefill_speed_tokens_per_second)
+homelab:llm_prompt_per_second
+# vLLM work rate (1-min) and in-flight prefill flag, when you need the split
+rate(hub_model_prompt_tokens_computed_total[1m])
+hub_model_prefill_in_flight
 
 # Latency p95 (seconds) — vLLM-only
 hub_model_ttft_p95_seconds
@@ -141,10 +147,14 @@ The hub (llmlab) omits a metric entirely when it has no data for it:
   tooling that coalesces missing-with-zero.
 - Engine-specific metric sets: vLLM exports `requests_waiting/running`,
   `kv_cache_used`, `preemptions_*`, `ttft/tpot/e2e/queue` percentiles,
-  `finish_*`, `prefix_cache_hit`, `engine_asleep`; llama.cpp exports
-  `requests_processing/deferred`, `busy_slots`, `prompt_cache_hit`;
-  both export `loaded`, `tokens_per_second`, `prompt_tokens_per_second`,
-  `spec_acceptance`.
+  `finish_*`, `prefix_cache_hit`, `engine_asleep`,
+  `prompt_tokens_computed_total`, `prompt_compute_throughput_*`,
+  `prefill_speed_*`, `prefill_in_flight`, `prefill/decode p50/p95`;
+  llama.cpp exports `requests_processing/deferred`, `busy_slots`,
+  `prompt_cache_hit`;
+  both export `loaded`, `tokens_per_second`, `spec_acceptance`
+  (and llama.cpp additionally `prompt_tokens_per_second` — see the
+  metrics catalog for the 2026-09-30 vLLM split).
 
 ## Before / after service-change comparison
 

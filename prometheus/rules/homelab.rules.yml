@@ -182,9 +182,18 @@ groups:
       - record: homelab:llm_tokens_per_second
         expr: avg by (server, model) (hub_model_tokens_per_second)
 
-      # Prompt (prefill) throughput per model (tokens/s)
+      # Prompt work / prefill rate per model (tokens/s). Two engines, two
+      # DIFFERENT quantities in one series (the gpu-llm panel documents it):
+      # llama.cpp = hub_model_prompt_tokens_per_second — child-clock
+      # computed-prompt rate (a performance figure); vLLM = rate() of the
+      # hub's monotonic computed-prompt counter over 5m (an operational
+      # work-per-wall-second figure — the vLLM performance figure is
+      # hub_model_prefill_speed_tokens_per_second). 2026-09-30: the vLLM
+      # side used to be a 2 s wall-rate gauge whose lumpy counter arrivals
+      # (one jump per finished prefill) read as bogus 5-7K t/s.
       - record: homelab:llm_prompt_per_second
         expr: avg by (server, model) (hub_model_prompt_tokens_per_second)
+             or avg by (server, model) (rate(hub_model_prompt_tokens_computed_total[5m]))
 
       # GPU utilisation per physical GPU (0..100)
       - record: homelab:gpu_utilization

@@ -238,7 +238,22 @@ raw_llm:
     note: "decode throughput of active generation"
   hub_model_prompt_tokens_per_second:
     kind: gauge
-    note: "llama.cpp: computed prompt tokens divided by the child's own prompt clock (prompt seconds total; the per-prefill gauge is the fallback) — cached prompt tokens are EXCLUDED (they live in hub_model_prompt_cache_hit) and a prefill landing in one poll interval divides by its real processing time, not the poll gap. vLLM: computed (non-cached) prompt tokens per wall clock."
+    note: "llama.cpp models only since 2026-09-30: computed prompt tokens divided by the child's own prompt clock (prompt seconds total; the per-prefill gauge is the fallback) — cached prompt tokens are EXCLUDED (they live in hub_model_prompt_cache_hit) and a prefill landing in one poll interval divides by its real processing time, not the poll gap. This is a PERFORMANCE figure (tokens per engine-prefill-second). vLLM models no longer export this name — their work rate is hub_model_prompt_compute_throughput_tokens_per_second and their performance figure is hub_model_prefill_speed_tokens_per_second."
+  hub_model_prompt_tokens_computed_total:
+    kind: counter
+    note: "vLLM models only (2026-09-30). Monotonic per engine lifetime: the engine's computed (non-cached) prompt-token counter (vllm:prompt_tokens_by_source_total{source=\"local_compute\"}, fallback queries-hits). Engine restart / mux engine switch = a Prometheus counter reset (value drops). Consumers pick their own window: rate(hub_model_prompt_tokens_computed_total[1m])."
+  hub_model_prompt_compute_throughput_tokens_per_second:
+    kind: gauge
+    unit: tok/s (work per wall second, 1-min window)
+    note: "vLLM models only (2026-09-30). The hub's 1-minute average of computed prompt-token work per wall-clock second. An OPERATIONAL/load figure, not a prefill speed: the engine's counter jumps in lumps (one per finished prefill — probed flat during a 28 s chunked prefill), so the 1-min window turns each lump into its true average work rate instead of a fake 5K t/s spike."
+  hub_model_prefill_speed_tokens_per_second:
+    kind: gauge
+    unit: tok/s (computed KV per vLLM prefill-phase second)
+    note: "vLLM models only. The PERFORMANCE figure: delta(request_prefill_kv_computed_tokens) / delta(request_prefill_time_seconds) over completed requests in the hub's 5-min window — cached/transferred prompt tokens excluded, independent of the arrival pattern. Different question from hub_model_prompt_compute_throughput_tokens_per_second (work per wall second) — do not conflate. Pairs with hub_model_prefill_speed_age_seconds (when the last completed prefill landed) and hub_model_prefill_in_flight (1 = a request is in the prefill phase right now; this vLLM build exposes no token counters during it, so no in-flight rate exists)."
+  hub_model_prefill_p50_seconds / hub_model_prefill_p95_seconds / hub_model_decode_p50_seconds / hub_model_decode_p95_seconds:
+    kind: gauge
+    unit: s
+    note: "Per-request phase-time quantiles from the vLLM phase histograms (sampled at request finish). Renamed from hub_model_{prefill,decode}_avg_seconds on 2026-09-30 — the values were always quantiles, never a mean."
   hub_model_requests_waiting / hub_model_requests_running:
     kind: gauge
     note: "vLLM-side names. Can be absent when the hub parse fails."
@@ -408,7 +423,7 @@ recording_rules:
   "homelab:llm_e2e:seconds": {unit: s, expr: "hub p95 or raw vllm e2e p95"}
   "homelab:llm_preemptions:rate": {unit: rate/s, expr: "rate(hub preemptions_total[5m]) or rate(raw vllm[15m])"}
   "homelab:llm_tokens_per_second": {unit: tok/s, expr: "hub decode t/s per model"}
-  "homelab:llm_prompt_per_second": {unit: tok/s, expr: "hub prefill t/s per model"}
+  "homelab:llm_prompt_per_second": {unit: tok/s, expr: "hub prefill/prompt rate per model — llama.cpp child-clock rate (performance) OR vLLM rate() of the computed-token counter over 5m (operational work rate); see the gpu-llm panel description"}
   "homelab:gpu_utilization": {unit: percent (0..100), expr: "avg hub gpu pct by (server, gpu)"}
   "homelab:llm_prefix_cache_hit:ratio": {unit: ratio, expr: "hub prefix or prompt cache hit, per model"}
   "homelab:service_up": {unit: bool, expr: "up (stable name for agents)"}

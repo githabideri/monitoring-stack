@@ -128,7 +128,7 @@
         "type": "prometheus",
         "uid": "prometheus-homelab"
       },
-      "description": "Count of vLLM engines with KV-cache data in the pipeline. 1 each, whether via the hub or the raw vllm: fallback (kv_source=vllm-raw). 0 with a loaded vLLM model = both sources dead — latency/KV panels are blind for that engine.",
+      "description": "Count of vLLM engines with KV-cache data in the pipeline. 1 each, whether via the hub or the raw vllm: fallback (kv_source=vllm-raw). 0 with a loaded vLLM model = both sources dead \u2014 latency/KV panels are blind for that engine.",
       "fieldConfig": {
         "defaults": {
           "unit": "short",
@@ -244,7 +244,7 @@
         "type": "prometheus",
         "uid": "prometheus-homelab"
       },
-      "description": "Prefill throughput per model — prompt processing capacity.",
+      "description": "2026-09-30 semantics: two different quantities per engine in one series. llama.cpp = the hub's child-clock computed-prompt rate (a PERFORMANCE figure: tokens per engine-prefill-second). vLLM = rate() of the hub's monotonic computed-prompt counter over 5m (an OPERATIONAL work-per-wall-second figure \u2014 the vLLM performance figure is the hub's prefill-speed gauge: completed-request computed-KV / prefill-phase seconds). The old vLLM 2 s wall-rate gauge is gone: its lumpy counter arrivals (one jump per finished prefill) read as bogus 5-7K t/s.",
       "fieldConfig": {
         "defaults": {
           "unit": "short",
@@ -353,7 +353,7 @@
         "type": "prometheus",
         "uid": "prometheus-homelab"
       },
-      "description": "Per-token latency (decode speed experienced by the user). 50ms ≈ 20 tok/s.",
+      "description": "Per-token latency (decode speed experienced by the user). 50ms \u2248 20 tok/s.",
       "fieldConfig": {
         "defaults": {
           "unit": "ms",
@@ -454,7 +454,7 @@
       },
       "id": 603,
       "panels": [],
-      "title": "Pressure — queue, KV cache, preemptions",
+      "title": "Pressure \u2014 queue, KV cache, preemptions",
       "type": "row"
     },
     {
@@ -587,7 +587,7 @@
         "type": "prometheus",
         "uid": "prometheus-homelab"
       },
-      "description": "Preemptions per second. Any sustained non-zero = requests being evicted from KV and restarted — the engine is oversubscribed.",
+      "description": "Preemptions per second. Any sustained non-zero = requests being evicted from KV and restarted \u2014 the engine is oversubscribed.",
       "fieldConfig": {
         "defaults": {
           "unit": "ops",

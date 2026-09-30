@@ -103,9 +103,9 @@ groups:
       # Backup age restricted to IN-SCOPE namespaces: a namespace is in
       # scope if ANY of its guests got a backup within the last 60 days.
       # Out-of-scope (fully dead) namespaces read 0 here — e.g. the pve
-      # namespace after the pve -> locmox migration, whose entries are all
-      # pre-migration relics and would otherwise dominate the overview
-      # stat. The raw homelab:backup_age_seconds keeps everything (the
+      # namespace after its host was renamed (pre-rename entries are all
+      # migration relics and would otherwise dominate the overview
+      # stat). The raw homelab:backup_age_seconds keeps everything (the
       # Backups dashboard shows it there).
       - record: homelab:backup_age_inscope_seconds
         expr: >-
@@ -182,16 +182,27 @@ groups:
       - record: homelab:llm_tokens_per_second
         expr: avg by (server, model) (hub_model_tokens_per_second)
 
-      # Prompt work / prefill rate per model (tokens/s). Two engines, two
-      # DIFFERENT quantities in one series (the gpu-llm panel documents it):
-      # llama.cpp = hub_model_prompt_tokens_per_second — child-clock
-      # computed-prompt rate (a performance figure); vLLM = rate() of the
-      # hub's monotonic computed-prompt counter over 5m (an operational
-      # work-per-wall-second figure — the vLLM performance figure is
-      # hub_model_prefill_speed_tokens_per_second). 2026-09-30: the vLLM
-      # side used to be a 2 s wall-rate gauge whose lumpy counter arrivals
-      # (one jump per finished prefill) read as bogus 5-7K t/s.
-      - record: homelab:llm_prompt_per_second
+      # PREFILL execution speed per model (tokens/s) — vLLM only: the
+      # engine's own phase clocks (computed KV tokens / prefill-phase
+      # seconds over the hub's 5-min window). THE performance figure;
+      # llama.cpp has no phase histograms, so it is absent here by design
+      # (its child-clock prompt rate lives in the compute-throughput rule
+      # below, where it is bounded by real work).
+      - record: homelab:llm_prefill_speed_tokens_per_second
+        expr: avg by (server, model) (hub_model_prefill_speed_tokens_per_second)
+
+      # Prompt compute throughput per model (tokens per WALL second) —
+      # two engines, deliberately one quantity: llama.cpp = the hub's
+      # child-clock computed-prompt rate; vLLM = rate() of the hub's
+      # monotonic computed-prompt counter over 5m. The vLLM leg amortizes
+      # lumpy counter updates (one jump per finished prefill) over a stable
+      # interval — an operational work-rate, NOT the execution speed
+      # (that is the rule above; a 33K prefill arriving as one 28 s lump
+      # reads ~553 t/s here while its phase speed is ~1,186). 2026-09-30:
+      # this rule's vLLM leg used to be a 2 s wall-rate gauge that read as
+      # bogus 5-7K t/s; the old combined homelab:llm_prompt_per_second name
+      # is retired (it mixed the two quantities).
+      - record: homelab:llm_prompt_compute_throughput_tokens_per_second
         expr: avg by (server, model) (hub_model_prompt_tokens_per_second)
              or avg by (server, model) (rate(hub_model_prompt_tokens_computed_total[5m]))
 

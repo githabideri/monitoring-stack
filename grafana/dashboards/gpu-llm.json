@@ -128,7 +128,7 @@
         "type": "prometheus",
         "uid": "prometheus-homelab"
       },
-      "description": "Count of vLLM engines with KV-cache data in the pipeline. 1 each, whether via the hub or the raw vllm: fallback (kv_source=vllm-raw). 0 with a loaded vLLM model = both sources dead \u2014 latency/KV panels are blind for that engine.",
+      "description": "Count of vLLM engines with KV-cache data in the pipeline. 1 each, whether via the hub or the raw vllm: fallback (kv_source=vllm-raw). 0 with a loaded vLLM model = both sources dead — latency/KV panels are blind for that engine.",
       "fieldConfig": {
         "defaults": {
           "unit": "short",
@@ -244,7 +244,7 @@
         "type": "prometheus",
         "uid": "prometheus-homelab"
       },
-      "description": "2026-09-30 semantics: two different quantities per engine in one series. llama.cpp = the hub's child-clock computed-prompt rate (a PERFORMANCE figure: tokens per engine-prefill-second). vLLM = rate() of the hub's monotonic computed-prompt counter over 5m (an OPERATIONAL work-per-wall-second figure \u2014 the vLLM performance figure is the hub's prefill-speed gauge: completed-request computed-KV / prefill-phase seconds). The old vLLM 2 s wall-rate gauge is gone: its lumpy counter arrivals (one jump per finished prefill) read as bogus 5-7K t/s.",
+      "description": "vLLM only: the engine's own phase clocks — computed KV tokens / prefill-phase seconds over the hub's 5-min window. THE performance figure: independent of request arrivals, cached/transferred tokens excluded. llama.cpp has no phase histograms and is absent by design. (2026-09-30 split of the old combined rule.)",
       "fieldConfig": {
         "defaults": {
           "unit": "short",
@@ -278,13 +278,61 @@
             "type": "prometheus",
             "uid": "prometheus-homelab"
           },
-          "expr": "homelab:llm_prompt_per_second",
+          "expr": "homelab:llm_prefill_speed_tokens_per_second",
           "instant": false,
           "legendFormat": "{{server}} {{model}}",
           "refId": "A"
         }
       ],
-      "title": "Prompt (prefill) tokens/s per model",
+      "title": "Prefill execution speed (tok/s) — vLLM phase clocks",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-homelab"
+      },
+      "description": "Computed prompt tokens per WALL second. llama.cpp: the engine's child-clock prompt rate (defensible — it clocks its own prompt phase); vLLM: rate() of the hub's monotonic computed-prompt counter over 5m. Lumpy counter arrivals amortized over a stable interval — an OPERATIONAL work-rate, deliberately not the execution speed (that is the neighbour panel; a 33K-token prefill arriving as one 28 s lump reads ~553 t/s here while its phase speed is ~1,186). Prefix-cache hits excluded. (2026-09-30: replaces the old homelab:llm_prompt_per_second, which mixed these two quantities in one name.)",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 1
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 22
+      },
+      "id": 5,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus-homelab"
+          },
+          "expr": "homelab:llm_prompt_compute_throughput_tokens_per_second",
+          "instant": false,
+          "legendFormat": "{{server}} {{model}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Prompt compute (tok/s, wall)",
       "type": "timeseries"
     },
     {
@@ -293,7 +341,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 22
+        "y": 30
       },
       "id": 602,
       "panels": [],
@@ -321,7 +369,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 23
+        "y": 31
       },
       "id": 6,
       "options": {
@@ -353,7 +401,7 @@
         "type": "prometheus",
         "uid": "prometheus-homelab"
       },
-      "description": "Per-token latency (decode speed experienced by the user). 50ms \u2248 20 tok/s.",
+      "description": "Per-token latency (decode speed experienced by the user). 50ms ≈ 20 tok/s.",
       "fieldConfig": {
         "defaults": {
           "unit": "ms",
@@ -369,7 +417,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 23
+        "y": 31
       },
       "id": 7,
       "options": {
@@ -417,7 +465,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 31
+        "y": 39
       },
       "id": 8,
       "options": {
@@ -450,11 +498,11 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 39
+        "y": 47
       },
       "id": 603,
       "panels": [],
-      "title": "Pressure \u2014 queue, KV cache, preemptions",
+      "title": "Pressure — queue, KV cache, preemptions",
       "type": "row"
     },
     {
@@ -478,7 +526,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 40
+        "y": 48
       },
       "id": 9,
       "options": {
@@ -555,7 +603,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 40
+        "y": 48
       },
       "id": 10,
       "options": {
@@ -587,7 +635,7 @@
         "type": "prometheus",
         "uid": "prometheus-homelab"
       },
-      "description": "Preemptions per second. Any sustained non-zero = requests being evicted from KV and restarted \u2014 the engine is oversubscribed.",
+      "description": "Preemptions per second. Any sustained non-zero = requests being evicted from KV and restarted — the engine is oversubscribed.",
       "fieldConfig": {
         "defaults": {
           "unit": "ops",
@@ -603,7 +651,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 48
+        "y": 56
       },
       "id": 11,
       "options": {
@@ -636,7 +684,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 56
+        "y": 64
       },
       "id": 604,
       "panels": [],
@@ -665,7 +713,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 57
+        "y": 65
       },
       "id": 12,
       "options": {
@@ -712,7 +760,7 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 57
+        "y": 65
       },
       "id": 13,
       "options": {
@@ -772,7 +820,7 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 57
+        "y": 65
       },
       "id": 14,
       "options": {
@@ -810,7 +858,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 65
+        "y": 73
       },
       "collapsed": false
     },
@@ -843,7 +891,7 @@
         "h": 4,
         "w": 8,
         "x": 0,
-        "y": 66
+        "y": 74
       },
       "id": 701,
       "options": {
@@ -898,7 +946,7 @@
         "h": 4,
         "w": 8,
         "x": 0,
-        "y": 66
+        "y": 74
       },
       "id": 702,
       "options": {
@@ -953,7 +1001,7 @@
         "h": 4,
         "w": 8,
         "x": 0,
-        "y": 66
+        "y": 74
       },
       "id": 703,
       "options": {
@@ -995,7 +1043,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 70
+        "y": 78
       },
       "id": 704,
       "options": {

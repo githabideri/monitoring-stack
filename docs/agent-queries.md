@@ -113,13 +113,19 @@ homelab:llm_prefix_cache_hit:ratio
 
 # Generation / prompt throughput (tok/s)
 homelab:llm_tokens_per_second
-# prompt rate per model — llama.cpp child-clock rate OR vLLM rate() of the
-# hub's computed-token counter (two different quantities, one series; the
-# vLLM PERFORMANCE figure is hub_model_prefill_speed_tokens_per_second)
-homelab:llm_prompt_per_second
-# vLLM work rate (1-min) and in-flight prefill flag, when you need the split
-rate(hub_model_prompt_tokens_computed_total[1m])
+# PREFILL execution speed — vLLM only (engine phase clocks; the performance
+# figure). llama.cpp has no phase clocks and is absent here by design.
+homelab:llm_prefill_speed_tokens_per_second
+# Prompt compute THROUGHPUT (tokens per wall second) — llama.cpp child-clock
+# rate OR vLLM rate() of the hub's computed-token counter. Lumpy arrivals
+# amortized over a stable interval: an operational work-rate, NOT the
+# execution speed (a 33K prefill in one 28 s lump reads ~553 here while its
+# phase speed is ~1,186). The old homelab:llm_prompt_per_second mixed these
+# two quantities and is retired (2026-09-30).
+homelab:llm_prompt_compute_throughput_tokens_per_second
+# in-flight prefill flag (detector, not a rate) and MTP acceptance (gauge, window deltas)
 hub_model_prefill_in_flight
+hub_model_spec_acceptance   # windowed MTP draft acceptance (0..1)
 
 # Latency p95 (seconds) — vLLM-only
 hub_model_ttft_p95_seconds

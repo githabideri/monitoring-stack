@@ -128,7 +128,7 @@
         "type": "prometheus",
         "uid": "prometheus-homelab"
       },
-      "description": "Count of vLLM engines with KV-cache data in the pipeline. 1 each, whether via the hub or the raw vllm: fallback (kv_source=vllm-raw). 0 with a loaded vLLM model = both sources dead — latency/KV panels are blind for that engine.",
+      "description": "Count of vLLM engines with KV-cache data in the pipeline. 1 each, whether via the hub or the raw vllm: fallback (kv_source=vllm-raw). 0 with a loaded vLLM model = both sources dead \u2014 latency/KV panels are blind for that engine.",
       "fieldConfig": {
         "defaults": {
           "unit": "short",
@@ -244,7 +244,7 @@
         "type": "prometheus",
         "uid": "prometheus-homelab"
       },
-      "description": "vLLM only: the engine's own phase clocks — computed KV tokens / prefill-phase seconds over the hub's 5-min window. THE performance figure: independent of request arrivals, cached/transferred tokens excluded. llama.cpp has no phase histograms and is absent by design. (2026-09-30 split of the old combined rule.)",
+      "description": "Prompt-computed tokens / the engine's own prefill-phase seconds \u2014 one concept for both engines: vLLM phase clocks (hub 5-min window) and llama.cpp child clocks. THE performance figure: independent of request arrivals; cached/transferred tokens excluded. Caveat: the token bases differ slightly (KV-computed vs prompt tokens) \u2014 two approximations of one concept, not an identical quantity.",
       "fieldConfig": {
         "defaults": {
           "unit": "short",
@@ -284,7 +284,7 @@
           "refId": "A"
         }
       ],
-      "title": "Prefill execution speed (tok/s) — vLLM phase clocks",
+      "title": "Prefill execution speed (tok/s) \u2014 both engines",
       "type": "timeseries"
     },
     {
@@ -292,7 +292,7 @@
         "type": "prometheus",
         "uid": "prometheus-homelab"
       },
-      "description": "Computed prompt tokens per WALL second. llama.cpp: the engine's child-clock prompt rate (defensible — it clocks its own prompt phase); vLLM: rate() of the hub's monotonic computed-prompt counter over 5m. Lumpy counter arrivals amortized over a stable interval — an OPERATIONAL work-rate, deliberately not the execution speed (that is the neighbour panel; a 33K-token prefill arriving as one 28 s lump reads ~553 t/s here while its phase speed is ~1,186). Prefix-cache hits excluded. (2026-09-30: replaces the old homelab:llm_prompt_per_second, which mixed these two quantities in one name.)",
+      "description": "Computed prompt tokens per WALL second (rate of the hub's monotonic computed-prompt counter, 5m \u2014 lumpy per-prefill arrivals amortized). Operational work-rate, deliberately NOT the execution speed (see the panel above; a 33K prefill in one 28 s lump reads ~553 here while its phase speed is ~1,186). vLLM only for now: the hub's llama.cpp series are child-clock speeds, not a wall-clock work rate, and are deliberately not substituted \u2014 the llama leg appears once the hub exports a monotonic llama prompt-work counter. The old homelab:llm_prompt_per_second (which mixed the two quantities) is retired.",
       "fieldConfig": {
         "defaults": {
           "unit": "short",
@@ -332,7 +332,7 @@
           "refId": "A"
         }
       ],
-      "title": "Prompt compute (tok/s, wall)",
+      "title": "Prompt compute throughput (tok/s, wall) \u2014 vLLM for now",
       "type": "timeseries"
     },
     {
@@ -401,7 +401,7 @@
         "type": "prometheus",
         "uid": "prometheus-homelab"
       },
-      "description": "Per-token latency (decode speed experienced by the user). 50ms ≈ 20 tok/s.",
+      "description": "Per-token latency (decode speed experienced by the user). 50ms \u2248 20 tok/s.",
       "fieldConfig": {
         "defaults": {
           "unit": "ms",
@@ -502,7 +502,7 @@
       },
       "id": 603,
       "panels": [],
-      "title": "Pressure — queue, KV cache, preemptions",
+      "title": "Pressure \u2014 queue, KV cache, preemptions",
       "type": "row"
     },
     {
@@ -635,7 +635,7 @@
         "type": "prometheus",
         "uid": "prometheus-homelab"
       },
-      "description": "Preemptions per second. Any sustained non-zero = requests being evicted from KV and restarted — the engine is oversubscribed.",
+      "description": "Preemptions per second. Any sustained non-zero = requests being evicted from KV and restarted \u2014 the engine is oversubscribed.",
       "fieldConfig": {
         "defaults": {
           "unit": "ops",

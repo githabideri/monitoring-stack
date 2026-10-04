@@ -313,6 +313,26 @@ raw_vllm:
   vllm:engine_sleep_state:
     kind: gauge
 
+raw_vllm_health:
+  # vllm-health-probe (scripts/vllm-health-probe/): a bridge in the
+  # Prometheus box GETs a vLLM engine's /health per scrape and exposes it as
+  # text. vLLM's /health speaks JSON, which Prometheus cannot scrape directly
+  # (unsupported Content-Type), so the job `llm-vllm-health` points at the
+  # probe, not at the engine.
+  vllm_engine_health:
+    kind: gauge
+    source: vllm-health-probe (served on the probe box's localhost)
+    note: "the engine-liveness bit: 1 on HTTP 200, 0 on 503 (engine dead but the API process still answers — the 2026-09-11 blind spot), other statuses, timeout, or connection refused. The target's own `up` is the probe bridge's liveness, NOT the engine's — alert on the gauge, not on up."
+  vllm_health_probe_seconds:
+    kind: gauge
+    unit: seconds
+    source: vllm-health-probe
+  vllm_health_response_info:
+    kind: gauge
+    labels: [code]
+    source: vllm-health-probe
+    note: "last observed HTTP status of the health endpoint; code=\"error\" when it did not answer."
+
 raw_prometheus:
   # Prometheus 3.14 self-metrics (job=prometheus-self). Note: v3 renamed
   # the 2.x names — there is NO prometheus_tsdb_storage_bytes (use

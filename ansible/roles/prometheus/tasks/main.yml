@@ -167,3 +167,54 @@
     name: prometheus
     state: started
     enabled: true
+
+# vLLM engine-liveness probe (scripts/vllm-health-probe/): the vLLM /health
+# endpoint speaks JSON, which Prometheus cannot scrape (unsupported
+# Content-Type) — a scrape job pointed at it sits "down" with no signal.
+# The bridge GETs it per scrape and exposes vllm_engine_health as text.
+- name: Ensure vllm-health-probe install dir
+  ansible.builtin.file:
+    path: /opt/vllm-health-probe
+    state: directory
+    mode: "0755"
+  when: vllm_health_probe_enabled
+
+- name: Deploy vllm-health-probe script
+  ansible.builtin.copy:
+    src: vllm_health_probe.py
+    dest: /opt/vllm-health-probe/vllm_health_probe.py
+    mode: "0755"
+  notify: restart vllm_health_probe
+  when: vllm_health_probe_enabled
+
+- name: Ensure vllm-health-probe env dir
+  ansible.builtin.file:
+    path: /etc/vllm-health-probe
+    state: directory
+    mode: "0755"
+  when: vllm_health_probe_enabled
+
+- name: Deploy vllm-health-probe env file (probe URL + listen)
+  ansible.builtin.copy:
+    content: |
+      VLLM_HEALTH_URL={{ vllm_health_probe_url }}
+      VLLM_HEALTH_PROBE_LISTEN={{ vllm_health_probe_listen }}
+    dest: /etc/vllm-health-probe/probe.env
+    mode: "0644"
+  notify: restart vllm_health_probe
+  when: vllm_health_probe_enabled
+
+- name: Deploy vllm-health-probe systemd unit
+  ansible.builtin.template:
+    src: vllm_health_probe.service.j2
+    dest: /etc/systemd/system/vllm_health_probe.service
+    mode: "0644"
+  notify: restart vllm_health_probe
+  when: vllm_health_probe_enabled
+
+- name: Enable and start vllm-health-probe
+  ansible.builtin.systemd:
+    name: vllm_health_probe
+    state: started
+    enabled: true
+  when: vllm_health_probe_enabled

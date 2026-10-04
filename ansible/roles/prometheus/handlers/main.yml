@@ -4,3 +4,9 @@
     name: prometheus
     daemon_reload: true
     state: restarted
+
+- name: restart vllm_health_probe
+  ansible.builtin.systemd:
+    name: vllm_health_probe
+    daemon_reload: true
+    state: restarted

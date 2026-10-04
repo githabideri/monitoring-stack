@@ -37,3 +37,12 @@ prometheus_scrape_configs: []
 
 # Rule files to copy into <config_dir>/rules.d/ (paths on the control node)
 prometheus_rule_files: []
+
+# vLLM engine-liveness probe (see scripts/vllm-health-probe/): a small bridge
+# in this box GETs a vLLM engine's /health (JSON — Prometheus cannot scrape
+# it directly) and exposes vllm_engine_health as text. Off unless enabled;
+# the URL is a secret-of-nothing (internal address) — set it from the
+# private inventory, never in this public repo.
+vllm_health_probe_enabled: false
+vllm_health_probe_url: ""
+vllm_health_probe_listen: "127.0.0.1:10021"

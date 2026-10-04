@@ -1,0 +1,15 @@
+[Unit]
+Description=vLLM engine-liveness probe (vllm_engine_health)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User={{ prometheus_user }}
+{% if prometheus_user != 'root' %}Group={{ prometheus_group }}
+{% endif %}
+ExecStart=/usr/bin/python3 /opt/vllm-health-probe/vllm_health_probe.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

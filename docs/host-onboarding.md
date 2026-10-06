@@ -78,9 +78,9 @@ curl -s "localhost:9090/api/v1/query?query=up{job=\"node-exporter\",instance=\"1
   everything the exporter reads: node status, guest status/config,
   cluster resources/status. No broader role needed. If the PVE host is
   only reachable over Tailscale, the job's `target` param is its Tailscale
-  address (the CT needs a route for `100.64.0.0/10` via a box whose own
-  tailscale0 can serve it, with MASQ — see the homelab overview for the
-  concrete setup).
+  address (the CT needs a route for the Tailscale CGAT block via a box
+  whose own tailscale0 can serve it, with MASQ — see the homelab
+  overview for the concrete setup).
 - **LLM endpoint** — add a job targeting `<host:port>/metrics`
   (vLLM, llama.cpp, or the hub). The hub needs
   `scheme: https` + `tls_insecure_skip_verify: true` for self-signed

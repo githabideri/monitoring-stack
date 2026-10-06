@@ -11,7 +11,7 @@ pbs_exporter_install_dir: /usr/local/bin
 pbs_exporter_config_dir: /etc/pbs-exporter
 pbs_exporter_listen_address: "0.0.0.0:10019"
 
-# PBS endpoint, e.g. "https://10.0.0.18:8007"
+# PBS endpoint, e.g. "https://PBS-HOST:8007"
 pbs_exporter_endpoint: "http://localhost:8007"
 # PBS uses self-signed certs by default
 pbs_exporter_insecure: true

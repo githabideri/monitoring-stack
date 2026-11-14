@@ -296,3 +296,19 @@ groups:
           max(homelab:tailscale_route_up{subnet="main-lan"})
           * max(tailscale_ip_forward_enabled)
           * max(homelab:tailscale_check_fresh)
+
+  # Ingest: age (seconds) since the last GOOD pull, per backup-ingest
+  # flow/dataset (nightly and weekly flows of the estate's
+  # receiver-initiated backup ingest; the private design doc is the
+  # source of truth for the flow list and schedules). The metric is a
+  # per-flow timestamp counter published by the pull driver and
+  # re-served by the webhook daemon's /metrics on the receiving box.
+  # A growing age is the "backup silently dead" signal; a 30-min
+  # watcher on the receiving side turns it into a push notification
+  # past its per-flow threshold (daily flows: day-scale, weekly:
+  # week-scale).
+  - name: homelab.ingest
+    interval: 1m
+    rules:
+      - record: homelab:ingest_lastgood_age_seconds
+        expr: time() - ingest_pull_lastgood_timestamp_seconds

@@ -1,0 +1,64 @@
+---
+# PVE LVM thin pool alerts.
+#
+# Source: the central pve-exporter. Its node module reads each PVE
+# host's storages through the PVE API; for an lvmthin storage the
+# size/used pair is the thin pool's physical capacity/usage (verified
+# 2026-11-14 on a pool at ~89% in `lvs`). pve_disk_usage_bytes /
+# pve_disk_size_bytes carry only the storage `id` label, so the ratio
+# is built by joining both with pve_storage_info{plugintype="lvmthin"}
+# (a 1.0 presence marker) on `id`, which pulls in the node and storage
+# labels. The result is one 0..1 series per (host, thin storage): the
+# alerts are templated over the whole fleet, no host is hardcoded.
+#
+# Phase 1 has no Alertmanager: Prometheus evaluates these rules and
+# exposes them at /api/v1/alerts and in the UI. The severity label is
+# the routing tier (info = worth looking at, critical = page-worthy).
+#
+# Why this matters: LXC/VM disks that live as thin LVs on the pool
+# cannot grow (and in the worst case writes fail) when the pool
+# exhausts, so a pool that stays above 80% physical data usage is the
+# early warning and 90% is the intervention point.
+groups:
+  - name: homelab.lvm
+    rules:
+      # Thin pool physical data usage (0..1) per (host, storage).
+      - record: homelab:pve_lvmthin_pool:ratio
+        expr: >-
+          (pve_disk_usage_bytes
+           * on(id) group_left() pve_storage_info{plugintype="lvmthin"})
+          /
+          (pve_disk_size_bytes
+           * on(id) group_left() pve_storage_info{plugintype="lvmthin"})
+
+      # Informational tier: pool data usage above 80% for 10 minutes.
+      - alert: LvmThinPoolHigh
+        expr: homelab:pve_lvmthin_pool:ratio > 0.80
+        for: 10m
+        labels:
+          severity: info
+        annotations:
+          summary: >-
+            LVM thin pool {{ $labels.storage }} on {{ $labels.node }}
+            above 80%
+          description: >-
+            Thin pool {{ $labels.storage }} on PVE host {{ $labels.node }}
+            has stayed above 80% physical data usage for 10 minutes
+            (currently {{ $value | humanizePercentage }}). Disks allocated
+            from this pool cannot grow once the pool exhausts.
+
+      # Page-worthy tier: pool data usage above 90% for 10 minutes.
+      - alert: LvmThinPoolCritical
+        expr: homelab:pve_lvmthin_pool:ratio > 0.90
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: >-
+            LVM thin pool {{ $labels.storage }} on {{ $labels.node }}
+            above 90%
+          description: >-
+            Thin pool {{ $labels.storage }} on PVE host {{ $labels.node }}
+            has stayed above 90% physical data usage for 10 minutes
+            (currently {{ $value | humanizePercentage }}). Intervene now:
+            free or extend the pool before disk growth starts to fail.

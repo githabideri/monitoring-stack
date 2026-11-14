@@ -4,12 +4,17 @@
 # Source: the central pve-exporter. Its node module reads each PVE
 # host's storages through the PVE API; for an lvmthin storage the
 # size/used pair is the thin pool's physical capacity/usage (verified
-# 2026-11-14 on a pool at ~89% in `lvs`). pve_disk_usage_bytes /
+# 2026-11-14 on a pool at ~90% in `lvs`). pve_disk_usage_bytes /
 # pve_disk_size_bytes carry only the storage `id` label, so the ratio
 # is built by joining both with pve_storage_info{plugintype="lvmthin"}
-# (a 1.0 presence marker) on `id`, which pulls in the node and storage
-# labels. The result is one 0..1 series per (host, thin storage): the
-# alerts are templated over the whole fleet, no host is hardcoded.
+# (a 1.0 presence marker) on `id`, pulling in the node and storage
+# labels explicitly (an unlabeled group_left would keep none of them).
+# The join is restricted to role="pve-node": the same storage is also
+# reported by the cluster jobs, which would make the match many-to-many
+# and fail evaluation. The result is one 0..1 series per (host, thin
+# storage): the alerts are templated over the whole fleet, no host is
+# hardcoded. Hosts whose node job is down produce no series (absence =
+# host down, visible via the up metric, not a faked 0).
 #
 # Phase 1 has no Alertmanager: Prometheus evaluates these rules and
 # exposes them at /api/v1/alerts and in the UI. The severity label is
@@ -25,11 +30,13 @@ groups:
       # Thin pool physical data usage (0..1) per (host, storage).
       - record: homelab:pve_lvmthin_pool:ratio
         expr: >-
-          (pve_disk_usage_bytes
-           * on(id) group_left() pve_storage_info{plugintype="lvmthin"})
+          (pve_disk_usage_bytes{role="pve-node"}
+           * on(id) group_left(node, storage, plugintype)
+             pve_storage_info{plugintype="lvmthin", role="pve-node"})
           /
-          (pve_disk_size_bytes
-           * on(id) group_left() pve_storage_info{plugintype="lvmthin"})
+          (pve_disk_size_bytes{role="pve-node"}
+           * on(id) group_left(node, storage, plugintype)
+             pve_storage_info{plugintype="lvmthin", role="pve-node"})
 
       # Informational tier: pool data usage above 80% for 10 minutes.
       - alert: LvmThinPoolHigh
